@@ -3,6 +3,7 @@ import {
   geoAlbersUsa,
   geoPath,
   geoBounds,
+  select,
   selectAll,
   timeParse,
 } from "d3";
@@ -15,34 +16,37 @@ Promise.all([
   fetch(usAtlasUrl).then((response) => response.json()),
   fetch(firesJson).then((response) => response.json()),
 ]).then(([topoJsonData, firesData]) => {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
+  const containerWidth = select("#fig1").node().getBoundingClientRect().width;
+  const containerHeight = select("#fig1").node().getBoundingClientRect().height;
 
-  const svg = create("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("style", "max-width: 100%; height: auto;");
+  const svg = create("svg");
+  // .attr("width", containerWidth)
+  // .attr("height", containerHeight)
+  // .attr("style", "max-width: 100%; height: auto;");
 
   const projection = geoAlbersUsa()
-    .translate([width / 2, height / 2])
-    .scale(800);
+    .translate([containerWidth / 2, containerHeight / 2])
+    .scale(600);
 
   const path = geoPath().projection(projection);
 
   // Calculate bounding box of the map data
-  const bounds = geoBounds(
-    topojson.feature(topoJsonData, topoJsonData.objects.states)
-  );
-  const [[west, south], [east, north]] = bounds;
+  // const bounds = geoBounds(
+  //   topojson.feature(topoJsonData, topoJsonData.objects.states)
+  // );
+  // const [[west, south], [east, north]] = bounds;
 
   // Calculate aspect ratio of the map
-  const mapWidth = east - west;
-  const mapHeight = north - south;
+  // const mapWidth = east - west;
+  // const mapHeight = north - south;
 
   // Set viewBox of SVG element based on bounding box to fit map correctly
   svg
-    .attr("viewBox", `${west} ${south} ${mapWidth} ${mapHeight}`)
-    .attr("preserveAspectRatio", "xMidYMid meet");
+    // .attr("viewBox", `${west} ${south} ${mapWidth} ${mapHeight}`)
+    .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`)
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("width", "100%")
+    .style("height", "100%");
 
   const g = svg.append("g");
 
@@ -87,8 +91,6 @@ Promise.all([
     (d) => d.DISCOVERY_DATE.getFullYear() === 2005
   );
 
-  console.log(yearData);
-
   // Append fire data points as circles to SVG
   svg
     .selectAll("circle")
@@ -100,6 +102,7 @@ Promise.all([
     .attr("fill", "blue")
     .attr("opacity", 0.5);
 
-  // Append SVG element to the body
-  document.body.append(svg.node());
+  // Append SVG element to the specific grid item
+  // document.body.append(svg.node());
+  select("#fig1").append(() => svg.node());
 });
