@@ -1,26 +1,27 @@
 import {
   select,
-  create,
   scaleTime,
   scaleLinear,
   extent,
   max,
-  rollups,
-  timeDay,
   area,
   axisBottom,
   axisLeft,
 } from "d3";
-import { fetchFiresData, cleanFiresData } from "./prepareFiresData";
+import {
+  fetchFiresData,
+  cleanFiresData,
+  countFiresPerDay,
+} from "./prepareFiresData";
+import { setUpContainer } from "./setUpContainer";
 
 export function createAreaChart(container) {
   fetchFiresData().then((firesData) => {
-    const containerWidth = select(container)
-      .node()
-      .getBoundingClientRect().width;
-    const containerHeight = select(container)
-      .node()
-      .getBoundingClientRect().height;
+    // Obtain data in necessary shape
+    const cleanData = cleanFiresData(firesData);
+    const firesPerDay = countFiresPerDay(cleanData);
+
+    const { svg, containerWidth, containerHeight } = setUpContainer(container);
 
     const margin = {
       top: 20,
@@ -28,24 +29,6 @@ export function createAreaChart(container) {
       bottom: 20,
       left: 40,
     };
-
-    const svg = create("svg");
-
-    svg
-      .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`)
-      .style("width", "100%")
-      .style("height", "100%");
-
-    const cleanData = cleanFiresData(firesData);
-
-    // Wrangle data to sufficient form for the area chart
-    const firesPerDay = rollups(
-      cleanData,
-      (v) => v.length,
-      (d) => timeDay(d.DISCOVERY_DATE)
-    );
-
-    firesPerDay.sort((a, b) => a[0] - b[0]);
 
     const xScale = scaleTime(extent(firesPerDay.map((d) => d[0])), [
       margin.left,
@@ -62,9 +45,10 @@ export function createAreaChart(container) {
       .y0(yScale(0))
       .y1((d) => yScale(d[1])); // nr of fires on that date
 
+    // Create area
     svg
       .append("path")
-      .attr("fill", "#ff5733")
+      .attr("fill", "#943126")
       .attr("d", firesPerDayArea(firesPerDay));
 
     // Append x axis

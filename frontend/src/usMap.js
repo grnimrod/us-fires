@@ -1,10 +1,11 @@
-import { create, geoAlbersUsa, geoPath, select, selectAll } from "d3";
+import { geoAlbersUsa, geoPath, select, selectAll } from "d3";
 import * as topojson from "topojson-client";
 import {
   fetchFiresData,
   cleanFiresData,
   filterPerYear,
 } from "./prepareFiresData";
+import { setUpContainer } from "./setUpContainer";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
@@ -13,25 +14,19 @@ export function createMapFigure(container) {
     fetch(usAtlasUrl).then((response) => response.json()),
     fetchFiresData(),
   ]).then(([topoJsonData, firesData]) => {
-    const containerWidth = select(container)
-      .node()
-      .getBoundingClientRect().width;
-    const containerHeight = select(container)
-      .node()
-      .getBoundingClientRect().height;
+    // Obtain data in necessary shape
+    const cleanData = cleanFiresData(firesData);
+    const yearData = filterPerYear(cleanData, 2005);
 
+    const { svg, containerWidth, containerHeight } = setUpContainer(container);
+
+    svg.attr("preserveAspectRatio", "xMidYMid meet");
+
+    // Set up map, draw out states
     const projection = geoAlbersUsa()
       .translate([containerWidth / 2, containerHeight / 2])
       .scale(600);
     const path = geoPath().projection(projection);
-
-    const svg = create("svg");
-
-    svg
-      .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`)
-      .attr("preserveAspectRatio", "xMidYMid meet")
-      .style("width", "100%")
-      .style("height", "100%");
 
     const g = svg.append("g");
 
@@ -59,10 +54,7 @@ export function createMapFigure(container) {
         )
       );
 
-    const cleanData = cleanFiresData(firesData);
-    const yearData = filterPerYear(cleanData, 2005);
-
-    // Append fire data points as circles to SVG
+    // Append fire data points as circles to SVG on top of the map
     svg
       .selectAll("circle")
       .data(yearData)
@@ -70,7 +62,7 @@ export function createMapFigure(container) {
       .attr("cx", (d) => projection([d.LONGITUDE, d.LATITUDE])[0])
       .attr("cy", (d) => projection([d.LONGITUDE, d.LATITUDE])[1])
       .attr("r", 2)
-      .attr("fill", "orange")
+      .attr("fill", "#943126")
       .attr("opacity", 0.5);
 
     // Append SVG element to the specific grid item
