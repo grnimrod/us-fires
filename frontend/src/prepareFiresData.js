@@ -1,4 +1,4 @@
-import { timeParse, rollups, timeDay } from "d3";
+import { timeParse, rollup, rollups, timeDay } from "d3";
 
 const firesJson = "../fires.json";
 
@@ -44,6 +44,23 @@ export function countFiresPerDay(data) {
   firesPerDay.sort((a, b) => a[0] - b[0]);
 
   return firesPerDay;
+}
+
+// Function for grouping by state and obtaining count of fires
+export function countFiresPerState(data) {
+  const firesPerState = Array.from(
+    rollups(
+      data,
+      (v) => v.length,
+      (d) => d.STATE_NAME
+    ),
+    ([key, values]) => ({
+      state: key,
+      count: values,
+    })
+  );
+
+  return firesPerState;
 }
 
 // Function for creating hierarchical data of fire categories (for sunburst chart)
