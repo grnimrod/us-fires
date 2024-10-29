@@ -1,8 +1,10 @@
 import { createMapFigure } from "./usMap";
+import { createChoroplethMap } from "./choroplethMap";
 import { createSunburstChart } from "./fireTypesSunburst";
 import { createAreaChart } from "./areaTimeline";
 
-createMapFigure("#fig1");
+// createMapFigure("#fig1");
+createChoroplethMap("#fig1");
 createSunburstChart("#fig2");
 createAreaChart("#fig3");
 
