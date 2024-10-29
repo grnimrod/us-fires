@@ -61,6 +61,33 @@ export function createSunburstChart(container) {
       }) // Set fill color for each path based on name of top-level ancestor node
       .attr("d", arcs);
 
+    svg
+      .append("g")
+      .attr(
+        "transform",
+        `translate(${containerWidth / 2}, ${containerHeight / 2})`
+      )
+      .attr("pointer-events", "none")
+      .attr("text-anchor", "middle")
+      .attr("font-size", 10)
+      .attr("font-family", "sans-serif")
+      .selectAll("text")
+      .data(
+        root
+          .descendants()
+          .filter((d) => d.depth && ((d.y0 + d.y1) / 2) * (d.x1 - d.x0) > 10)
+      )
+      .join("text")
+      .attr("transform", function (d) {
+        const x = (((d.x0 + d.x1) / 2) * 180) / Math.PI;
+        const y = (d.y0 + d.y1) / 2;
+        return `rotate(${
+          x - 90
+        }) translate(${y}, 0) rotate(${x < 180 ? 0 : 180})`;
+      })
+      .attr("dy", "0.35em")
+      .text((d) => d.data.name);
+
     select(container).append(() => svg.node());
   });
 }
