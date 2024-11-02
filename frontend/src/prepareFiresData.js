@@ -1,22 +1,17 @@
-import { timeParse, rollup, rollups, timeDay } from "d3";
+import { timeParse, timeFormat, rollups } from "d3";
 
 const firesJson = "../fires.json";
 
-// Function for fetching the JSON file
 export async function fetchFiresData() {
   return fetch(firesJson).then((response) => response.json());
 }
 
-// Function for preparing data into the state that we use with every figure
 export function cleanFiresData(data) {
-  // Filter data points where either longitude or latitude is undefined
-  const validProjectedFires = data.filter((d) => {
-    return d.LONGITUDE !== undefined && d.LATITUDE !== undefined;
-  });
-
   const parseDate = timeParse("%Y-%m-%d %H:%M:%S");
+  const validProjectedFires = data.filter(
+    (d) => d.LONGITUDE !== undefined && d.LATITUDE !== undefined
+  );
 
-  // Parse date fields
   validProjectedFires.forEach((d) => {
     d.DISCOVERY_DATE = parseDate(d.DISCOVERY_DATE);
     d.CONT_DATE = parseDate(d.CONT_DATE);
@@ -25,30 +20,22 @@ export function cleanFiresData(data) {
   return validProjectedFires;
 }
 
-// Function for filtering down to specific year
-export function filterPerYear(data, year) {
-  // Filter data for specific year, e.g. 2005
-  const yearData = data.filter((d) => d.DISCOVERY_DATE.getFullYear() === year);
-
-  return yearData;
-}
-
-// Function for grouping by each date and obtaining count of fires on the specific date (for area chart)
 export function countFiresPerDay(data) {
-  const firesPerDay = rollups(
-    data,
-    (v) => v.length,
-    (d) => timeDay(d.DISCOVERY_DATE)
-  );
-
-  firesPerDay.sort((a, b) => a[0] - b[0]);
-
-  return firesPerDay;
+  return Array.from(
+    rollups(
+      data,
+      (v) => v.length,
+      (d) => d.DISCOVERY_DATE
+    ),
+    ([key, values]) => ({
+      date: new Date(key),
+      count: values,
+    })
+  ).sort((a, b) => a.date - b.date);
 }
 
-// Function for grouping by state and obtaining count of fires
 export function countFiresPerState(data) {
-  const firesPerState = Array.from(
+  return Array.from(
     rollups(
       data,
       (v) => v.length,
@@ -59,8 +46,6 @@ export function countFiresPerState(data) {
       count: values,
     })
   );
-
-  return firesPerState;
 }
 
 // Function for creating hierarchical data of fire categories (for sunburst chart)
