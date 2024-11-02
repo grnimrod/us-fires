@@ -17,16 +17,11 @@ async function init() {
     .max(max(cleanData, (d) => d.DISCOVERY_DATE))
     .width(300)
     .tickFormat(timeFormat("%Y-%m-%d"))
-    .ticks(5)
-    .default([
-      min(cleanData, (d) => d.DISCOVERY_DATE),
-      max(cleanData, (d) => d.DISCOVERY_DATE),
-    ])
-    .fill("#943126");
+    .ticks(5);
 
   sliderRange.on("onchange", (val) => {
     const filteredData = cleanData.filter(
-      (d) => d.DISCOVERY_DATE >= val[0] && d.DISCOVERY_DATE <= val[1]
+      (d) => d.DISCOVERY_DATE.toDateString() === val.toDateString()
     );
 
     areaChart.updateChart(filteredData);
