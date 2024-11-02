@@ -34,22 +34,36 @@ export async function createChoroplethMap(container, cleanData) {
     firesPerState.map((d) => [namemap.get(d.state), d.count])
   );
 
+  const projection = geoAlbersUsa().fitSize(
+    [containerWidth, containerHeight],
+    topojson.feature(topoJsonData, topoJsonData.objects.states)
+  );
+  const path = geoPath().projection(projection);
+
   const g = svg.append("g");
 
   const states = g
     .selectAll("path")
     .data(topojson.feature(topoJsonData, topoJsonData.objects.states).features)
     .join("path")
+    .attr("d", path)
+    .attr("fill", (d) => color(valuemap.get(d.id)));
+
+  g.append("path")
+    .attr("fill", "none")
+    .attr("stroke", "white")
+    .attr("stroke-linejoin", "round")
+    .attr("class", "state-borders")
     .attr(
       "d",
-      geoPath().projection(
-        geoAlbersUsa().fitSize(
-          [containerWidth, containerHeight],
-          topojson.feature(topoJsonData, topoJsonData.objects.states)
+      path(
+        topojson.mesh(
+          topoJsonData,
+          topoJsonData.objects.states,
+          (a, b) => a !== b
         )
       )
-    )
-    .attr("fill", (d) => color(valuemap.get(d.id)));
+    );
 
   select(container).append(() => svg.node());
 
