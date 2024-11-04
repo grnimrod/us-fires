@@ -1,4 +1,4 @@
-import { timeParse, timeFormat, rollups } from "d3";
+import { timeParse, rollups } from "d3";
 
 const firesJson = "../fires.json";
 
@@ -8,6 +8,7 @@ export async function fetchFiresData() {
 
 export function cleanFiresData(data) {
   const parseDate = timeParse("%Y-%m-%d %H:%M:%S");
+
   const validProjectedFires = data.filter(
     (d) => d.LONGITUDE !== undefined && d.LATITUDE !== undefined
   );
@@ -34,18 +35,35 @@ export function countFiresPerDay(data) {
   ).sort((a, b) => a.date - b.date);
 }
 
-export function countFiresPerState(data) {
-  return Array.from(
+export function countMonthlyFiresPerState(data) {
+  const allStates = Array.from(new Set(data.map((d) => d.STATE_NAME)));
+
+  const monthlyFiresPerState = Array.from(
     rollups(
       data,
       (v) => v.length,
+      (d) =>
+        new Date(d.DISCOVERY_DATE.getFullYear(), d.DISCOVERY_DATE.getMonth()),
       (d) => d.STATE_NAME
     ),
-    ([key, values]) => ({
-      state: key,
-      count: values,
-    })
+    ([key, values]) => {
+      const stateCounts = allStates.map((state) => {
+        const entry = values.find(([subKey]) => subKey === state);
+        return {
+          state: state,
+          count: entry ? entry[1] : 0, // Use 0 if the state is missing
+        };
+      });
+
+      return {
+        month: key,
+        states: stateCounts,
+      };
+    }
   );
+
+  monthlyFiresPerState.sort((a, b) => a.month - b.month);
+  return monthlyFiresPerState;
 }
 
 // Function for creating hierarchical data of fire categories (for sunburst chart)

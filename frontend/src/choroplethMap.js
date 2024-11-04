@@ -1,5 +1,5 @@
 import {
-  scaleSequential,
+  scaleSequentialLog,
   interpolateOranges,
   geoAlbersUsa,
   geoPath,
@@ -8,30 +8,42 @@ import {
 } from "d3";
 import * as topojson from "topojson-client";
 import { setUpContainer } from "./setUpContainer";
-import { countFiresPerState } from "./prepareFiresData";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
-export async function createChoroplethMap(container, cleanData) {
+export async function createChoroplethMap(container, initialData) {
   const topoJsonData = await fetch(usAtlasUrl).then((response) =>
     response.json()
   );
 
-  const firesPerState = countFiresPerState(cleanData);
   const { svg, containerWidth, containerHeight } = setUpContainer(container);
   svg.attr("preserveAspectRatio", "xMidYMid meet");
 
-  const color = scaleSequential()
-    .domain([0, max(firesPerState, (d) => d.count)])
+  // Domain of color scale starts at 1 instead of 0 to avoid log(0) = inf
+  const color = scaleSequentialLog()
+    .domain([
+      1,
+      max(initialData, (monthEntry) => {
+        return max(monthEntry.states, (stateEntry) => stateEntry.count);
+      }),
+    ])
     .interpolator(interpolateOranges);
 
   // Map state names to FIPS numeric identifiers
+  // If you give namemap a state name, it returns the state id
+  // We have state names in our data, we have state ids in the topojson data
   const namemap = new Map(
     topoJsonData.objects.states.geometries.map((d) => [d.properties.name, d.id])
   );
 
+  // Create a map linking each state ID to its fire count by flattening `initialData` to extract state entries with counts
   const valuemap = new Map(
-    firesPerState.map((d) => [namemap.get(d.state), d.count])
+    initialData.flatMap((monthEntry) =>
+      monthEntry.states.map((stateEntry) => [
+        namemap.get(stateEntry.state),
+        stateEntry.count,
+      ])
+    )
   );
 
   const projection = geoAlbersUsa().fitSize(
@@ -68,22 +80,19 @@ export async function createChoroplethMap(container, cleanData) {
   select(container).append(() => svg.node());
 
   return {
-    updateMap(filteredData) {
-      const firesPerState = countFiresPerState(filteredData);
-
-      const color = scaleSequential()
-        .domain([0, max(firesPerState, (d) => d.count)])
-        .interpolator(interpolateOranges);
+    updateMap(data) {
+      // Create map along similar principle as above, only for a single object of the data array (corresponding to data of a single month)
+      const valuemapForEntry = new Map(
+        data.states.map((stateEntry) => [
+          namemap.get(stateEntry.state),
+          stateEntry.count,
+        ])
+      );
 
       states
         .transition()
         .duration(100)
-        .attr("fill", (d) =>
-          color(
-            firesPerState.find((fire) => namemap.get(fire.state) === d.id)
-              ?.count || 0
-          )
-        );
+        .attr("fill", (d) => color(valuemapForEntry.get(d.id)));
     },
   };
 }
