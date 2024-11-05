@@ -10,7 +10,6 @@ import {
 import { setUpContainer } from "./setUpContainer";
 
 export function createSunburstChart(container, monthlyData) {
-  console.log(monthlyData);
   const initialData = monthlyData[0].categories;
   console.log(initialData);
 
@@ -28,7 +27,6 @@ export function createSunburstChart(container, monthlyData) {
   const root = hierarchy(initialData)
     .sum((d) => d.count)
     .sort((a, b) => b.count - a.count);
-
   partitionSunburst(root);
 
   // Add an arc for each element
@@ -86,7 +84,54 @@ export function createSunburstChart(container, monthlyData) {
 
   return {
     updateSunburst(data) {
-      console.log(data.categories);
+      const root = hierarchy(data.categories)
+        .sum((d) => d.count)
+        .sort((a, b) => b.count - a.count);
+      partitionSunburst(root);
+
+      // console.log(
+      //   root.descendants().map((d) => ({
+      //     name: d.data.name,
+      //     depth: d.depth,
+      //     y0: d.y0,
+      //     y1: d.y1,
+      //     x0: d.x0,
+      //     x1: d.x1,
+      //   }))
+      // );
+
+      const paths = svg
+        .selectAll("path")
+        .data(root.descendants().filter((d) => d.depth));
+
+      paths
+        .join("path")
+        .transition()
+        .attr("d", arcs) // Apply new arc positions
+        .attr("fill", (d) => {
+          while (d.depth > 1) d = d.parent;
+          return color(d.data.name);
+        });
+
+      const texts = svg
+        .selectAll("text")
+        .data(
+          root
+            .descendants()
+            .filter((d) => d.depth && ((d.y0 + d.y1) / 2) * (d.x1 - d.x0) > 10)
+        );
+
+      texts
+        .join("text")
+        .transition()
+        .attr("transform", function (d) {
+          const x = (((d.x0 + d.x1) / 2) * 180) / Math.PI;
+          const y = (d.y0 + d.y1) / 2;
+          return `rotate(${
+            x - 90
+          }) translate(${y}, 0) rotate(${x < 180 ? 0 : 180})`;
+        })
+        .text((d) => d.data.name);
     },
   };
 }
