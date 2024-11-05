@@ -1,4 +1,4 @@
-import { timeParse, rollups } from "d3";
+import { timeParse, rollups, hierarchy } from "d3";
 
 const firesJson = "../fires.json";
 
@@ -66,26 +66,42 @@ export function countMonthlyFiresPerState(data) {
   return monthlyFiresPerState;
 }
 
-// Function for creating hierarchical data of fire categories (for sunburst chart)
-export function createHierarchy(data) {
-  const hierData = {
+// Function for creating hierarchical structure of monthly entries for fire categories (for sunburst chart)
+function createHierarchy(entries) {
+  return {
     name: "root",
     children: Array.from(
       rollups(
-        data,
+        entries,
         (v) => v.length,
         (d) => d.CAUSE_CATEGORY,
         (d) => d.STAT_CAUSE_DESCR
       ),
       ([key, values]) => ({
         name: key,
-        children: values.map(([subKey, count]) => ({
+        children: values.map(([subKey, value]) => ({
           name: subKey,
-          value: count,
+          count: value,
         })),
       })
     ),
   };
+}
 
-  return hierData;
+export function createMonthlyHierarchy(data) {
+  const groupedData = Array.from(
+    rollups(
+      data,
+      (entries) => createHierarchy(entries),
+      (d) =>
+        new Date(d.DISCOVERY_DATE.getFullYear(), d.DISCOVERY_DATE.getMonth())
+    ),
+    ([month, hierarchy]) => ({
+      month,
+      categories: hierarchy,
+    })
+  );
+
+  groupedData.sort((a, b) => a.month - b.month);
+  return groupedData;
 }

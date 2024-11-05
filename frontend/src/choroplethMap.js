@@ -37,13 +37,11 @@ export async function createChoroplethMap(container, initialData) {
   );
 
   // Create a map linking each state ID to its fire count by flattening `initialData` to extract state entries with counts
-  const valuemap = new Map(
-    initialData.flatMap((monthEntry) =>
-      monthEntry.states.map((stateEntry) => [
-        namemap.get(stateEntry.state),
-        stateEntry.count,
-      ])
-    )
+  const valuemapForFirstEntry = new Map(
+    initialData[0].states.map((stateEntry) => [
+      namemap.get(stateEntry.state),
+      stateEntry.count,
+    ])
   );
 
   const projection = geoAlbersUsa().fitSize(
@@ -59,7 +57,7 @@ export async function createChoroplethMap(container, initialData) {
     .data(topojson.feature(topoJsonData, topoJsonData.objects.states).features)
     .join("path")
     .attr("d", path)
-    .attr("fill", (d) => color(valuemap.get(d.id)));
+    .attr("fill", (d) => color(valuemapForFirstEntry.get(d.id)));
 
   g.append("path")
     .attr("fill", "none")
