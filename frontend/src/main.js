@@ -2,6 +2,7 @@ import { timeFormat, select } from "d3";
 import { sliderBottom } from "d3-simple-slider";
 import { createChoroplethMap } from "./choroplethMap";
 import { createSunburstChart } from "./fireTypesSunburst";
+import { createHistogram } from "./histTimeline";
 import {
   fetchFiresData,
   cleanFiresData,
@@ -20,6 +21,10 @@ async function init() {
     monthlyFiresPerState
   );
   const sunburstChart = createSunburstChart("#fig2", monthlyFireCategoriesData);
+
+  const sliderContainer = "#slider-container";
+  const sliderHeight = 100;
+  const histTimeline = createHistogram(sliderContainer, cleanData);
 
   // We use these to set up slider with custom steps
   // They are based on the data of the choropleth map, but all data will follow the same structure of
@@ -43,7 +48,7 @@ async function init() {
     .min(0)
     .max(monthIndex.length - 1)
     .step(1)
-    .width(300)
+    .width(500)
     .tickValues(tickValues)
     .tickFormat((i) => timeFormat("%Y-%m")(monthIndex[i].date))
     .ticks(numTicks);
@@ -57,12 +62,12 @@ async function init() {
     sunburstChart.updateSunburst(selectedMonthDataSunburst);
   });
 
-  const gRange = select("#slider-range")
+  const gRange = select(sliderContainer)
     .append("svg")
-    .attr("width", 500)
-    .attr("height", 100)
+    .attr("width", 700)
+    .attr("height", sliderHeight)
     .append("g")
-    .attr("transform", "translate(90, 30)");
+    .attr("transform", "translate(95, 10)");
 
   gRange.call(sliderRange);
 }

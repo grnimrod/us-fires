@@ -11,7 +11,6 @@ import { setUpContainer } from "./setUpContainer";
 
 export function createSunburstChart(container, monthlyData) {
   const initialData = monthlyData[0].categories;
-  console.log(initialData);
 
   const { svg, containerWidth, containerHeight } = setUpContainer(container);
 
