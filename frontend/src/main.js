@@ -2,7 +2,7 @@ import { timeFormat, select } from "d3";
 import { sliderBottom } from "d3-simple-slider";
 import { createBinnedMap } from "./binnedMap";
 import { createChoroplethMap } from "./choroplethMap";
-import { createSunburstChart } from "./fireTypesSunburst";
+import { createSunburstChart } from "./sunburstChart";
 import { createHistogram } from "./histTimeline";
 import {
   fetchFiresData,

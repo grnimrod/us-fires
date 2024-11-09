@@ -6,58 +6,68 @@ import {
   partition,
   hierarchy,
   arc,
+  create,
 } from "d3";
-import { setUpContainer } from "./setUpContainer";
 
 export function createSunburstChart(container, monthlyData) {
-  const initialData = monthlyData[0].categories;
+  const firstEntryCategories = monthlyData[0].categories;
 
-  const { svg, containerWidth, containerHeight } = setUpContainer(container);
+  const containerBoundingClientRect = select(container)
+    .node()
+    .getBoundingClientRect();
+  const containerWidth = containerBoundingClientRect.width;
+  const containerHeight = containerBoundingClientRect.height;
+  const radius = Math.min(containerWidth, containerHeight) / 6;
 
-  const radius = Math.min(containerWidth, containerHeight) / 2;
   const color = scaleOrdinal(
-    quantize(interpolateRainbow, initialData.children.length + 1)
+    quantize(interpolateRainbow, firstEntryCategories.children.length + 1)
   );
 
-  // Create partitioning function
-  const partitionSunburst = partition().size([2 * Math.PI, radius]);
-
   // Find root, define that value of broader categories is sum of the value of its children, sort in descending order
-  const root = hierarchy(initialData)
+  const root = hierarchy(firstEntryCategories)
     .sum((d) => d.count)
     .sort((a, b) => b.count - a.count);
-  partitionSunburst(root);
 
-  // Add an arc for each element
-  const arcs = arc()
+  // Create partitioning function
+  const partitionSunburst = partition().size([2 * Math.PI, root.height + 1]);
+
+  partitionSunburst(root);
+  root.each((d) => (d.current = d));
+
+  const arcGenerator = arc()
     .startAngle((d) => d.x0)
     .endAngle((d) => d.x1)
     .padAngle((d) => Math.min((d.x1 - d.x0) / 2, 0.005))
-    .padRadius(radius / 2)
-    .innerRadius((d) => d.y0)
-    .outerRadius((d) => d.y1 - 1);
+    .padRadius(radius * 1.5)
+    .innerRadius((d) => d.y0 * radius)
+    .outerRadius((d) => Math.max(d.y0 * radius, d.y1 * radius - 1));
 
-  svg
+  const svg = create("svg")
+    .attr("viewBox", [
+      -containerWidth / 2,
+      -containerHeight / 2,
+      containerWidth,
+      containerHeight,
+    ])
+    .style("width", "100%")
+    .style("height", "100%");
+
+  const arcs = svg
     .append("g")
-    .attr(
-      "transform",
-      `translate(${containerWidth / 2}, ${containerHeight / 2})`
-    ) // Position chart to middle of container
     .selectAll("path")
-    .data(root.descendants().filter((d) => d.depth)) // Filter out the root (where depth is 0)
+    .data(root.descendants().slice(1)); // Filter out the root (where depth is 0)
+
+  arcs
     .join("path")
     .attr("fill", (d) => {
       while (d.depth > 1) d = d.parent;
       return color(d.data.name);
-    }) // Set fill color for each path based on name of top-level ancestor node
-    .attr("d", arcs);
+    })
+    .attr("fill-opacity", 0.7) // Set fill color for each path based on name of top-level ancestor node
+    .attr("d", (d) => arcGenerator(d.current));
 
-  svg
+  const labels = svg
     .append("g")
-    .attr(
-      "transform",
-      `translate(${containerWidth / 2}, ${containerHeight / 2})`
-    )
     .attr("pointer-events", "none")
     .attr("text-anchor", "middle")
     .attr("font-size", 10)
@@ -67,7 +77,9 @@ export function createSunburstChart(container, monthlyData) {
       root
         .descendants()
         .filter((d) => d.depth && ((d.y0 + d.y1) / 2) * (d.x1 - d.x0) > 10)
-    )
+    );
+
+  labels
     .join("text")
     .attr("transform", function (d) {
       const x = (((d.x0 + d.x1) / 2) * 180) / Math.PI;
@@ -83,46 +95,38 @@ export function createSunburstChart(container, monthlyData) {
 
   return {
     updateSunburst(data) {
-      const root = hierarchy(data.categories)
+      const currentEntryCategories = data.categories;
+
+      const newRoot = hierarchy(currentEntryCategories)
         .sum((d) => d.count)
         .sort((a, b) => b.count - a.count);
-      partitionSunburst(root);
+      partitionSunburst(newRoot);
+      newRoot.each((d) => (d.current = d));
 
-      // console.log(
-      //   root.descendants().map((d) => ({
-      //     name: d.data.name,
-      //     depth: d.depth,
-      //     y0: d.y0,
-      //     y1: d.y1,
-      //     x0: d.x0,
-      //     x1: d.x1,
-      //   }))
-      // );
-
-      const paths = svg
+      const newArcs = svg
+        .select("g")
         .selectAll("path")
-        .data(root.descendants().filter((d) => d.depth));
+        .data(newRoot.descendants().slice(1));
 
-      paths
+      newArcs
         .join("path")
-        .transition()
-        .attr("d", arcs) // Apply new arc positions
+        .attr("d", (d) => arcGenerator(d.current))
         .attr("fill", (d) => {
           while (d.depth > 1) d = d.parent;
           return color(d.data.name);
-        });
+        })
+        .attr("fill-opacity", 0.7);
 
-      const texts = svg
+      const newLabels = svg
         .selectAll("text")
         .data(
-          root
+          newRoot
             .descendants()
             .filter((d) => d.depth && ((d.y0 + d.y1) / 2) * (d.x1 - d.x0) > 10)
         );
+      // .join("text")
 
-      texts
-        .join("text")
-        .transition()
+      newLabels
         .attr("transform", function (d) {
           const x = (((d.x0 + d.x1) / 2) * 180) / Math.PI;
           const y = (d.y0 + d.y1) / 2;
