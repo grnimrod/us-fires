@@ -35,6 +35,25 @@ export function countFiresPerDay(data) {
   ).sort((a, b) => a.date - b.date);
 }
 
+export function structureByMonth(data) {
+  const groupedData = data.reduce((acc, observation) => {
+    const monthYear = new Date(
+      observation.DISCOVERY_DATE.getFullYear(),
+      observation.DISCOVERY_DATE.getMonth()
+    );
+
+    if (!acc[monthYear]) {
+      acc[monthYear] = { month: monthYear, children: [] };
+    }
+
+    acc[monthYear].children.push(observation);
+
+    return acc;
+  }, {});
+
+  return Object.values(groupedData).sort((a, b) => a.month - b.month);
+}
+
 export function countMonthlyFiresPerState(data) {
   const allStates = Array.from(new Set(data.map((d) => d.STATE_NAME)));
 

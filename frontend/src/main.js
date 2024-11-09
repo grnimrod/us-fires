@@ -1,11 +1,13 @@
 import { timeFormat, select } from "d3";
 import { sliderBottom } from "d3-simple-slider";
+import { createBinnedMap } from "./binnedMap";
 import { createChoroplethMap } from "./choroplethMap";
 import { createSunburstChart } from "./fireTypesSunburst";
 import { createHistogram } from "./histTimeline";
 import {
   fetchFiresData,
   cleanFiresData,
+  structureByMonth,
   countMonthlyFiresPerState,
   createMonthlyHierarchy,
 } from "./prepareFiresData";
@@ -13,9 +15,11 @@ import {
 async function init() {
   const firesData = await fetchFiresData();
   const cleanData = cleanFiresData(firesData);
+  const monthStructure = structureByMonth(cleanData);
   const monthlyFiresPerState = countMonthlyFiresPerState(cleanData);
   const monthlyFireCategoriesData = createMonthlyHierarchy(cleanData);
 
+  const binnedMap = await createBinnedMap("#fig4", monthStructure);
   const choroplethMap = await createChoroplethMap(
     "#fig1",
     monthlyFiresPerState
@@ -60,6 +64,9 @@ async function init() {
     // Other charts with other ways of accessing their relevant pre-made data can come here below
     const selectedMonthDataSunburst = monthlyFireCategoriesData[val];
     sunburstChart.updateSunburst(selectedMonthDataSunburst);
+
+    const selectedMonthDataBinned = monthStructure[val];
+    binnedMap.updateBinnedMap(selectedMonthDataBinned);
   });
 
   const gRange = select(sliderContainer)
