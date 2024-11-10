@@ -1,8 +1,7 @@
 import {
   select,
   scaleOrdinal,
-  quantize,
-  interpolateRainbow,
+  schemeObservable10,
   partition,
   hierarchy,
   arc,
@@ -19,9 +18,7 @@ export function createSunburstChart(container, monthlyData) {
   const containerHeight = containerBoundingClientRect.height;
   const radius = Math.min(containerWidth, containerHeight) / 6;
 
-  const color = scaleOrdinal(
-    quantize(interpolateRainbow, firstEntryCategories.children.length + 1)
-  );
+  const color = scaleOrdinal(schemeObservable10);
 
   // Find root, define that value of broader categories is sum of the value of its children, sort in descending order
   const root = hierarchy(firstEntryCategories)
@@ -63,7 +60,7 @@ export function createSunburstChart(container, monthlyData) {
       while (d.depth > 1) d = d.parent;
       return color(d.data.name);
     })
-    .attr("fill-opacity", 0.7) // Set fill color for each path based on name of top-level ancestor node
+    .attr("fill-opacity", 0.9)
     .attr("d", (d) => arcGenerator(d.current));
 
   const labels = svg
@@ -115,7 +112,7 @@ export function createSunburstChart(container, monthlyData) {
           while (d.depth > 1) d = d.parent;
           return color(d.data.name);
         })
-        .attr("fill-opacity", 0.7);
+        .attr("fill-opacity", 0.9);
 
       const newLabels = svg
         .selectAll("text")
