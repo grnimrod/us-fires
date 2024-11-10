@@ -2,6 +2,7 @@ import { timeFormat, select } from "d3";
 import { sliderBottom } from "d3-simple-slider";
 import { createBinnedMap } from "./binnedMap.js";
 import { createChoroplethMap } from "./choroplethMap.js";
+import { createIsoplethMap } from "./isoplethMap";
 import { createSunburstChart } from "./sunburstChart.js";
 import { createHistogram } from "./histTimeline.js";
 import { createSpiralHeatmap } from "./spiralHeatmap.js";
@@ -25,12 +26,13 @@ async function init() {
   let currentChart = "binnedMap";
   const binnedMap = await createBinnedMap("#fig1", monthStructure);
   const choroplethMap = await createChoroplethMap("#fig2",monthlyFiresPerState );
-
+  const isoplethMap = await createIsoplethMap("#fig5", monthStructure);
   // Initially hide choroplethMap container since binnedMap is selected by default
   document.querySelector("#fig2").style.display = "none";
+  document.querySelector("#fig5").style.display = "none";
 
   const sunburstChart = createSunburstChart("#fig3", monthlyFireCategoriesData);
-  //const spiralHeatmap = createSpiralHeatmap("#fig4", monthlyFiresCount);
+  const spiralHeatmap = createSpiralHeatmap("#fig4", monthlyFiresCount);
 
   const sliderContainer = "#slider-container";
   const sliderHeight = 100;
@@ -73,17 +75,22 @@ async function init() {
      if (selectedChart === "binnedMap") {
       document.querySelector("#fig1").style.display = "block";
       document.querySelector("#fig2").style.display = "none";
+      document.querySelector("#fig5").style.display = "none";
       currentChart = "binnedMap";
-    } else {
+    } else if (selectedChart === "choroplethMap") {
       document.querySelector("#fig1").style.display = "none";
       document.querySelector("#fig2").style.display = "block";
+      document.querySelector("#fig5").style.display = "none";
       currentChart = "choroplethMap";
+    } else if (selectedChart === "isoplethMap") {
+      document.querySelector("#fig1").style.display = "none";
+      document.querySelector("#fig2").style.display = "none";
+      document.querySelector("#fig5").style.display = "block";
+      currentChart = "isoplethMap";
     }
-
     // document.querySelector("#fig1").innerHTML = "";
 
     // currentChart = selectedChart;
-
     // currentChart == "binnedMap"
     //   ? await createBinnedMap("#fig1", monthStructure)
     //   : (choroplethMap = await createChoroplethMap(
@@ -94,10 +101,14 @@ async function init() {
 
 
  sliderRange.on("onchange", (val) => {
-      binnedMap.updateBinnedMap(monthStructure[val]);
-      choroplethMap.updateMap(monthlyFiresPerState[val]);
-
+    binnedMap.updateBinnedMap(monthStructure[val]);
+    choroplethMap.updateMap(monthlyFiresPerState[val]);
     sunburstChart.updateSunburst(monthlyFireCategoriesData[val]);
+    // This is for performance concern. Simultaneouly updating the invisible isopleth map will block the main thread
+    // TODO: Remove this if condition when performance optmization is done
+    if (document.querySelector("#fig5").style.display == "block") {
+      isoplethMap.updateIsoplethMap(monthStructure[val]);
+    }
   });
 
   // sliderRange.on("onchange", (val) => {
