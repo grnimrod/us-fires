@@ -85,6 +85,20 @@ export function countMonthlyFiresPerState(data) {
   return monthlyFiresPerState;
 }
 
+export function countFiresPerMonth(data) {
+  return Array.from(
+    rollups(
+      data,
+      (v) => v.length,
+      (d) => new Date(d.DISCOVERY_DATE.getFullYear(), d.DISCOVERY_DATE.getMonth()),
+    ),
+    ([key, values]) => ({
+      month: key,
+      count: values,
+    })
+  ).sort((a, b) => {a.month - b.month});
+}
+
 // Function for creating hierarchical structure of monthly entries for fire categories (for sunburst chart)
 function createHierarchy(entries) {
   return {

@@ -4,12 +4,14 @@ import { createBinnedMap } from "./binnedMap";
 import { createChoroplethMap } from "./choroplethMap";
 import { createSunburstChart } from "./sunburstChart";
 import { createHistogram } from "./histTimeline";
+import { createSpiralHeatmap } from "./spiralHeatmap";
 import {
   fetchFiresData,
   cleanFiresData,
   structureByMonth,
   countMonthlyFiresPerState,
   createMonthlyHierarchy,
+  countFiresPerMonth,
 } from "./prepareFiresData";
 
 async function init() {
@@ -17,6 +19,7 @@ async function init() {
   const cleanData = cleanFiresData(firesData);
   const monthStructure = structureByMonth(cleanData);
   const monthlyFiresPerState = countMonthlyFiresPerState(cleanData);
+  const monthlyFiresCount = countFiresPerMonth(cleanData);
   const monthlyFireCategoriesData = createMonthlyHierarchy(cleanData);
 
   const binnedMap = await createBinnedMap("#fig4", monthStructure);
@@ -25,6 +28,8 @@ async function init() {
     monthlyFiresPerState
   );
   const sunburstChart = createSunburstChart("#fig2", monthlyFireCategoriesData);
+  
+  const spiralHeatmap = createSpiralHeatmap("#fig4", monthlyFiresCount);
 
   const sliderContainer = "#slider-container";
   const sliderHeight = 100;
