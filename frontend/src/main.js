@@ -19,11 +19,13 @@ async function init() {
   const monthlyFiresPerState = countMonthlyFiresPerState(cleanData);
   const monthlyFireCategoriesData = createMonthlyHierarchy(cleanData);
 
-  const binnedMap = await createBinnedMap("#fig4", monthStructure);
-  const choroplethMap = await createChoroplethMap(
-    "#fig1",
-    monthlyFiresPerState
-  );
+  let currentChart = "binnedMap";
+  const binnedMap = await createBinnedMap("#fig1", monthStructure);
+  let choroplethMap;
+  // const choroplethMap = await createChoroplethMap(
+  //   "#fig1",
+  //   monthlyFiresPerState
+  // );
   const sunburstChart = createSunburstChart("#fig2", monthlyFireCategoriesData);
 
   const sliderContainer = "#slider-container";
@@ -57,16 +59,30 @@ async function init() {
     .tickFormat((i) => timeFormat("%Y-%m")(monthIndex[i].date))
     .ticks(numTicks);
 
-  sliderRange.on("onchange", (val) => {
-    const selectedMonthDataChoropleth = monthlyFiresPerState[val];
-    choroplethMap.updateMap(selectedMonthDataChoropleth);
+  // Set up dropdown menu functionality
+  const chartSelector = document.getElementById("chartSelector");
 
-    // Other charts with other ways of accessing their relevant pre-made data can come here below
+  chartSelector.addEventListener("change", async (event) => {
+    const selectedChart = event.target.value;
+    document.querySelector("#fig1").innerHTML = "";
+
+    currentChart = selectedChart;
+
+    currentChart == "binnedMap"
+      ? await createBinnedMap("#fig1", monthStructure)
+      : (choroplethMap = await createChoroplethMap(
+          "#fig1",
+          monthlyFiresPerState
+        ));
+  });
+
+  sliderRange.on("onchange", (val) => {
+    currentChart == "binnedMap"
+      ? binnedMap.updateBinnedMap(monthStructure[val])
+      : choroplethMap?.updateMap(monthlyFiresPerState[val]);
+
     const selectedMonthDataSunburst = monthlyFireCategoriesData[val];
     sunburstChart.updateSunburst(selectedMonthDataSunburst);
-
-    const selectedMonthDataBinned = monthStructure[val];
-    binnedMap.updateBinnedMap(selectedMonthDataBinned);
   });
 
   const gRange = select(sliderContainer)
