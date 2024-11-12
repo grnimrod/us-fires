@@ -5,19 +5,20 @@
     <script src="https://d3js.org/d3.v4.min.js"></script>
   </head>
   <body>
-    <div class="dashboard-container">
-      <div class="figure" id="fig1"></div>
-      <div class="figure" id="fig2"></div>
-      <div class="figure" id="fig3"></div>
-      <div class="figure" id="fig4"></div>
-      <div id="slider-container"></div>
-    </div>
 
     <div id="dropdown-container">
       <select id="chartSelector">
         <option value="binnedMap">Binned Map</option>
         <option value="choroplethMap">Choropleth Map</option>
       </select>
+    </div> 
+
+    <div class="dashboard-container">
+      <div class="figure" id="fig1"></div>
+      <div class="figure" id="fig2"></div>
+      <div class="figure" id="fig3"></div>
+      <div class="figure" id="fig4"></div>
+      <div id="slider-container"></div>
     </div>
 
     <script type="module" src="/src/main.js"></script>

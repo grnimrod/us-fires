@@ -1,10 +1,10 @@
 import { timeFormat, select } from "d3";
 import { sliderBottom } from "d3-simple-slider";
-import { createBinnedMap } from "./binnedMap";
-import { createChoroplethMap } from "./choroplethMap";
-import { createSunburstChart } from "./sunburstChart";
-import { createHistogram } from "./histTimeline";
-import { createSpiralHeatmap } from "./spiralHeatmap";
+import { createBinnedMap } from "./binnedMap.js";
+import { createChoroplethMap } from "./choroplethMap.js";
+import { createSunburstChart } from "./sunburstChart.js";
+import { createHistogram } from "./histTimeline.js";
+import { createSpiralHeatmap } from "./spiralHeatmap.js";
 import {
   fetchFiresData,
   cleanFiresData,
@@ -12,7 +12,7 @@ import {
   countMonthlyFiresPerState,
   createMonthlyHierarchy,
   countFiresPerMonth,
-} from "./prepareFiresData";
+} from "./prepareFiresData.js";
 
 async function init() {
   const firesData = await fetchFiresData();
@@ -24,14 +24,13 @@ async function init() {
 
   let currentChart = "binnedMap";
   const binnedMap = await createBinnedMap("#fig1", monthStructure);
-  let choroplethMap;
-  // const choroplethMap = await createChoroplethMap(
-  //   "#fig1",
-  //   monthlyFiresPerState
-  // );
-  const sunburstChart = createSunburstChart("#fig2", monthlyFireCategoriesData);
-  
-  const spiralHeatmap = createSpiralHeatmap("#fig4", monthlyFiresCount);
+  const choroplethMap = await createChoroplethMap("#fig2",monthlyFiresPerState );
+
+  // Initially hide choroplethMap container since binnedMap is selected by default
+  document.querySelector("#fig2").style.display = "none";
+
+  const sunburstChart = createSunburstChart("#fig3", monthlyFireCategoriesData);
+  //const spiralHeatmap = createSpiralHeatmap("#fig4", monthlyFiresCount);
 
   const sliderContainer = "#slider-container";
   const sliderHeight = 100;
@@ -69,26 +68,46 @@ async function init() {
 
   chartSelector.addEventListener("change", async (event) => {
     const selectedChart = event.target.value;
-    document.querySelector("#fig1").innerHTML = "";
 
-    currentChart = selectedChart;
+     // Toggle visibility instead of creating a new map
+     if (selectedChart === "binnedMap") {
+      document.querySelector("#fig1").style.display = "block";
+      document.querySelector("#fig2").style.display = "none";
+      currentChart = "binnedMap";
+    } else {
+      document.querySelector("#fig1").style.display = "none";
+      document.querySelector("#fig2").style.display = "block";
+      currentChart = "choroplethMap";
+    }
 
-    currentChart == "binnedMap"
-      ? await createBinnedMap("#fig1", monthStructure)
-      : (choroplethMap = await createChoroplethMap(
-          "#fig1",
-          monthlyFiresPerState
-        ));
+    // document.querySelector("#fig1").innerHTML = "";
+
+    // currentChart = selectedChart;
+
+    // currentChart == "binnedMap"
+    //   ? await createBinnedMap("#fig1", monthStructure)
+    //   : (choroplethMap = await createChoroplethMap(
+    //       "#fig1",
+    //       monthlyFiresPerState
+    //     ));
   });
 
-  sliderRange.on("onchange", (val) => {
-    currentChart == "binnedMap"
-      ? binnedMap.updateBinnedMap(monthStructure[val])
-      : choroplethMap?.updateMap(monthlyFiresPerState[val]);
 
-    const selectedMonthDataSunburst = monthlyFireCategoriesData[val];
-    sunburstChart.updateSunburst(selectedMonthDataSunburst);
+ sliderRange.on("onchange", (val) => {
+      binnedMap.updateBinnedMap(monthStructure[val]);
+      choroplethMap.updateMap(monthlyFiresPerState[val]);
+
+    sunburstChart.updateSunburst(monthlyFireCategoriesData[val]);
   });
+
+  // sliderRange.on("onchange", (val) => {
+  //   currentChart == "binnedMap"
+  //     ? binnedMap.updateBinnedMap(monthStructure[val])
+  //     : choroplethMap?.updateMap(monthlyFiresPerState[val]);
+
+  //   const selectedMonthDataSunburst = monthlyFireCategoriesData[val];
+  //   sunburstChart.updateSunburst(selectedMonthDataSunburst);
+  // });
 
   const gRange = select(sliderContainer)
     .append("svg")

@@ -9,7 +9,7 @@ import {
     hierarchy,
     arc,
   } from "d3";
-  import { setUpContainer } from "./setUpContainer";
+  import { setUpContainer } from "./setUpContainer.js";
 
 const radians = 0.0174532925;
 

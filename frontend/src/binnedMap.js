@@ -9,7 +9,7 @@ import {
 } from "d3";
 import { hexbin } from "d3-hexbin";
 import * as topojson from "topojson-client";
-import { setUpContainer } from "./setUpContainer";
+import { setUpContainer } from "./setUpContainer.js";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
