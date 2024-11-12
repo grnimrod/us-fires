@@ -1,6 +1,7 @@
 import { timeParse, rollups, hierarchy } from "d3";
 
 const firesJson = "../fires.json";
+// const firesJson = "../fires_reduced.json";
 
 export async function fetchFiresData() {
   return fetch(firesJson).then((response) => response.json());
