@@ -5,7 +5,8 @@ import {
     min,
     max,
     geoIdentity,
-    scaleLinear,
+    scaleSequentialLog,
+    interpolateOranges,
 } from "d3";
 import { contours } from 'd3-contour'
 import { setUpContainer } from "./setUpContainer";
@@ -155,11 +156,9 @@ function drawIsolines(g, fireDataPoints, width, height, path) {
         .size([gridResolutionX, gridResolutionY])
         .thresholds(thresholds);
     const polygons = countoursGenerator(grid);
-    // const colorScale = scaleSequential(interpolateInferno)
-    //     .domain([min(thresholds), max(thresholds)]);
-    const colorScale = scaleLinear()
+    const colorScale = scaleSequentialLog()
         .domain([min(thresholds), max(thresholds)])
-        .range(["white", "red"]);
+        .interpolator(interpolateOranges);
 
     console.log("width %s height %s resX %s resY %s", width, height, gridResolutionX, gridResolutionY);
     console.log(polygons)
