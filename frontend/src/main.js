@@ -25,7 +25,10 @@ async function init() {
 
   let currentChart = "binnedMap";
   const binnedMap = await createBinnedMap("#fig1", monthStructure);
-  const choroplethMap = await createChoroplethMap("#fig2",monthlyFiresPerState );
+  const choroplethMap = await createChoroplethMap(
+    "#fig2",
+    monthlyFiresPerState
+  );
   const isoplethMap = await createIsoplethMap("#fig5", monthStructure);
   // Initially hide choroplethMap container since binnedMap is selected by default
   document.querySelector("#fig2").style.display = "none";
@@ -71,8 +74,8 @@ async function init() {
   chartSelector.addEventListener("change", async (event) => {
     const selectedChart = event.target.value;
 
-     // Toggle visibility instead of creating a new map
-     if (selectedChart === "binnedMap") {
+    // Toggle visibility instead of creating a new map
+    if (selectedChart === "binnedMap") {
       document.querySelector("#fig1").style.display = "block";
       document.querySelector("#fig2").style.display = "none";
       document.querySelector("#fig5").style.display = "none";
@@ -99,8 +102,7 @@ async function init() {
     //     ));
   });
 
-
- sliderRange.on("onchange", (val) => {
+  sliderRange.on("onchange", (val) => {
     binnedMap.updateBinnedMap(monthStructure[val]);
     choroplethMap.updateMap(monthlyFiresPerState[val]);
     sunburstChart.updateSunburst(monthlyFireCategoriesData[val]);
