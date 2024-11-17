@@ -31,5 +31,8 @@
 
 .coil-label {
   fill: #000;
-  font-size: 7px;
+}
+
+.arc.selected-arc * {
+  stroke:black;
 }
