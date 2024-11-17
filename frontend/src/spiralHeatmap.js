@@ -9,6 +9,7 @@ import {
     partition,
     hierarchy,
     arc,
+    selectAll,
   } from "d3";
   import { setUpContainer } from "./setUpContainer.js";
 
@@ -19,7 +20,7 @@ const radians = 0.0174532925;
         const chartWidth = chartRadius * 2;
         const chartHeight = chartRadius * 2;
       	const labelRadius = chartRadius + 5;
-        const margin = { "top": 40, "bottom": 40, "left": 40, "right": 40 };
+        const margin = { "top": 0, "bottom": 0, "left": 0, "right": 0 };
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         //CHART OPTIONS
@@ -27,8 +28,8 @@ const radians = 0.0174532925;
         const holeRadius = holeRadiusProportion * chartRadius;
         const segmentsPerCoil = 12; //number of coils. for this example, I have 12 months per year. But you change to whatever suits your data. 
         const segmentAngle = 360 / segmentsPerCoil;
-        var coils; //number of coils, based on data.length / segmentsPerCoil
-        var coilWidth; //remaining chartRadius (after holeRadius removed), divided by coils + 1. I add 1 as the end of the coil moves out by 1 each time
+        let coils; //number of coils, based on data.length / segmentsPerCoil
+        let coilWidth; //remaining chartRadius (after holeRadius removed), divided by coils + 1. I add 1 as the end of the coil moves out by 1 each time
         function convertTextToNumbers(d) {
             //console.log(d);
             d.count = +d.count;
@@ -38,38 +39,43 @@ const radians = 0.0174532925;
             return d;
         };
 export function createSpiralHeatmap(container, monthlyData){
-    const { svg, containerWidth, containerHeight } = setUpContainer(container);
+    const { svg, containerWidth1, containerHeight1 } = setUpContainer(container);
+    //const radius = Math.min(containerWidth, containerHeight)/2;
 
-    var heatmap = spiralHeatmap()
-    .radius(chartRadius)
-    .holeRadiusProportion(0.2)
+    const containerBoundingClientRect = select(container)
+    .node()
+    .getBoundingClientRect();
+    const containerWidth = containerBoundingClientRect.width -200;
+    const containerHeight = containerBoundingClientRect.height -200;
+    const radius = Math.min(containerWidth, containerHeight) / 4;
+
+    /*let heatmap = spiralHeatmap(radius)
+    .radius(radius)
+    .holeRadiusProportion(0.1)
     .arcsPerCoil(12)
     .coilPadding(0.1)
     .arcLabel("month")
-    .coilLabel("year")
-
-    //var colour = d3.scaleSequential([190,7378],d3.interpolateRdYlGn);
+    .coilLabel("year")*/
 
     const color = scaleSequential()
-    .domain([190,7378])
+    .domain([1,7378])
     .interpolator(interpolateOranges);
 
 
         //ENSURE THE DATA IS SORTED CORRECTLY, IN THIS CASE BY YEAR AND MONTH
         //THE SPIRAL WILL START IN THE MIDDLE AND WORK OUTWARDS
 
-        var nestedData = d3.nest()
+        let nestedData = d3.nest()
             .key(function (d) { return d.car_type; })
             .sortValues(function (a, b) { return a.date - b.date; })
             .entries(monthlyData);
 
         nestedData.forEach(function (chartData) {
 
-            //colour.domain([190,7378]);
 
             //set the options for the sprial heatmap
-            let heatmap = spiralHeatmap()
-                .radius(chartRadius)
+            let heatmap = spiralHeatmap(radius)
+                .radius(radius)
                 .holeRadiusProportion(0.2)
                 .arcsPerCoil(12)
                 .coilPadding(0.1)
@@ -79,18 +85,26 @@ export function createSpiralHeatmap(container, monthlyData){
             //CREATE SVG AND A G PLACED IN THE CENTRE OF THE SVG
             const div = d3.select(container).append("div")
 
-            div.append("p")
-                .text(chartData.key)
+            //div.append("p")
+                //.text(chartData.key)
 
             const svg = div.append("svg")
-                .attr("width", chartWidth + margin.left + margin.right)
-                .attr("height", chartHeight + margin.top + margin.bottom);
+                .attr("viewBox", [
+                  -containerWidth / 2,
+                  -containerHeight / 2,
+                  containerWidth,
+                  containerHeight,
+                ])
+                .style("width", "100%")
+                .style("height", "100%");
+                //.attr("width", chartWidth + margin.left + margin.right)
+                //.attr("height", chartHeight + margin.top + margin.bottom);
 
             const g = svg.append("g")
                 .attr("transform", "translate("
-                + (margin.left + chartRadius)
+                + (0)
                 + ","
-                + (margin.top + chartRadius) + ")");
+                + (0) + ")");
 
             g.datum(chartData.values)
                 .call(heatmap);
@@ -101,32 +115,43 @@ export function createSpiralHeatmap(container, monthlyData){
         })
 
         select(container).append(() => svg.node());
-    return heatmap;
+    //return heatmap;
+    return {
+      updateHeatmap(data) {
+        if(data !== undefined){
+          let select = document.getElementsByClassName('selected-arc')[0];
+          let arc = document.getElementById(data.month);
+        
+          select.classList.remove('selected-arc');
+          arc.classList.add('selected-arc');
+        }
+      },
+    };
 
 }
 
-function spiralHeatmap () {
+function spiralHeatmap (rad) {
     // constants
     const radians = 0.0174532925
   
     // All options that are accessible to caller
     // Default values
-    var radius = 250
-    var holeRadiusProportion = 0.3 // proportion of radius
-    var arcsPerCoil = 12 // assuming months per year
-    var coilPadding = 0 // no padding
-    var arcLabel = months // no labels
-    var coilLabel = '' // no labels
-    var startAngle = 0 //starts at 12 o'clock
+    let radius = rad
+    let holeRadiusProportion = 0.3 // proportion of radius
+    let arcsPerCoil = 12 // assuming months per year
+    let coilPadding = 0 // no padding
+    let arcLabel = months // no labels
+    let coilLabel = '' // no labels
+    let startAngle = 0 //starts at 12 o'clock
   
     function chart (selection) {
       selection.each(function (data) {
         const arcAngle = 360 / arcsPerCoil
-        const labelRadius = radius + 20
+        const labelRadius = radius + 5
   
-        var arcLabelsArray = []
+        let arcLabelsArray = []
   
-        for (var i = 0; i < arcsPerCoil; i++) {
+        for (let i = 0; i < arcsPerCoil; i++) {
           arcLabelsArray.push(i)
         }
   
@@ -141,12 +166,13 @@ function spiralHeatmap () {
           .append('g')
           .attr('class', 'spiral-heatmap')
   
-        var arcLabelsG = thisSelection
+        let arcLabelsG = thisSelection
           .selectAll('.arc-label')
           .data(arcLabelsArray)
           .enter()
           .append('g')
           .attr('class', 'arc-label')
+          .attr("font-size", `${radius * 0.01}em`)
   
         arcLabelsG
           .append('text')
@@ -169,21 +195,30 @@ function spiralHeatmap () {
           .append('line')
           .attr('x2', function (d, i) {
             let lineAngle = i * arcAngle
-            let lineRadius = radius + 10
+            let lineRadius = radius / 2
             return x(lineAngle, lineRadius)
           })
           .attr('y2', function (d, i) {
             let lineAngle = i * arcAngle
-            let lineRadius = radius + 10
+            let lineRadius = radius / 2
             return y(lineAngle, lineRadius)
           })
-  
-        var arcs = thisSelection
+          let arcs = thisSelection
           .selectAll('.arc')
           .data(data)
           .enter()
           .append('g')
-          .attr('class', 'arc')
+          .attr('class','arc')
+          .attr('id',function(d, i) {return data[i].month; });
+
+          //array.forEach((arcs,data) => {
+          //  arcs.attr('id',(data.month))
+          //});
+          
+          arcs._groups[0][0].classList.add('selected-arc');
+
+          
+
   
         arcs.append('path').attr('d', function (d) {
           // start at vertice 1
@@ -246,10 +281,15 @@ function spiralHeatmap () {
   
         coilLabels
           .append('text')
+          .attr("transform", "translate("
+            + (0)
+            + ","
+            + (5) + ")")
           .attr('class', 'coil-label')
           .attr('x', 3)
           .attr('dy', -4)
           .append('textPath')
+          .attr("font-size", `${radius * 0.002}em`)
           .attr('xlink:href', function (d) {
             return '#path-' + d.month.getFullYear();
           })

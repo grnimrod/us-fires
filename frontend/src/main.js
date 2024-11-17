@@ -36,6 +36,7 @@ async function init() {
 
   const sunburstChart = createSunburstChart("#fig3", monthlyFireCategoriesData);
   const spiralHeatmap = createSpiralHeatmap("#fig4", monthlyFiresCount);
+  spiralHeatmap.updateHeatmap();
 
   const sliderContainer = "#slider-container";
   const sliderHeight = 100;
@@ -103,6 +104,7 @@ async function init() {
   });
 
   sliderRange.on("onchange", (val) => {
+    spiralHeatmap.updateHeatmap(monthlyFiresCount[val]);
     binnedMap.updateBinnedMap(monthStructure[val]);
     choroplethMap.updateMap(monthlyFiresPerState[val]);
     sunburstChart.updateSunburst(monthlyFireCategoriesData[val]);
