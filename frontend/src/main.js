@@ -114,7 +114,7 @@ async function init() {
   function update() {
     const offset = sliderRange.value() + 1;
 
-    if (offset >= months.length - 1) {
+    if (offset >= months.length) {
       resetTimer();
     } else {
       sliderRange.value(offset);
