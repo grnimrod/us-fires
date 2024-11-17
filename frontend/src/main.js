@@ -91,15 +91,46 @@ async function init() {
       document.querySelector("#fig5").style.display = "block";
       currentChart = "isoplethMap";
     }
-    // document.querySelector("#fig1").innerHTML = "";
+  });
 
-    // currentChart = selectedChart;
-    // currentChart == "binnedMap"
-    //   ? await createBinnedMap("#fig1", monthStructure)
-    //   : (choroplethMap = await createChoroplethMap(
-    //       "#fig1",
-    //       monthlyFiresPerState
-    //     ));
+  // Set up play button functionality
+  let isSliding = false;
+  let timer;
+
+  const playButton = select("#play-button");
+
+  playButton.on("click", function () {
+    const button = select(this);
+    if (button.text() == "Pause") {
+      resetTimer();
+    } else {
+      isSliding = true;
+      timer = setInterval(update, 50);
+      button.text("Pause");
+    }
+  });
+
+  function update() {
+    const offset = sliderRange.value() + 1;
+
+    if (offset >= months.length - 1) {
+      resetTimer();
+    } else {
+      sliderRange.value(offset);
+      // sliderRange.on("onchange")(offset);
+    }
+  }
+
+  function resetTimer() {
+    isSliding = false;
+    clearInterval(timer);
+    playButton.text("Play");
+  }
+
+  sliderRange.on("end", function () {
+    if (playButton.text() == "Pause") {
+      resetTimer();
+    }
   });
 
   sliderRange.on("onchange", (val) => {
@@ -113,17 +144,9 @@ async function init() {
     }
   });
 
-  // sliderRange.on("onchange", (val) => {
-  //   currentChart == "binnedMap"
-  //     ? binnedMap.updateBinnedMap(monthStructure[val])
-  //     : choroplethMap?.updateMap(monthlyFiresPerState[val]);
-
-  //   const selectedMonthDataSunburst = monthlyFireCategoriesData[val];
-  //   sunburstChart.updateSunburst(selectedMonthDataSunburst);
-  // });
-
   const gRange = select(sliderContainer)
     .append("svg")
+    .attr("class", "slider")
     .attr("width", 700)
     .attr("height", sliderHeight)
     .append("g")

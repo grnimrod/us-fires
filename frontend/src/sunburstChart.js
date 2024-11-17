@@ -72,7 +72,6 @@ export function createSunburstChart(container, monthlyData) {
         .join(": ")}\nNumber of fires: ${d.value}`
   );
 
-  console.log(radius);
   svg
     .append("text")
     .attr("text-anchor", "middle")
