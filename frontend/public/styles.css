@@ -17,14 +17,26 @@
 }
 
 #dropdown-container {
-  position: fixed;    
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;       
-  padding: 10px;     
-  background-color: #f8f8f8; 
-  z-index: 1000;     
-  text-align: left; 
+  width: 100%;
+  padding: 10px;
+  background-color: #f8f8f8;
+  z-index: 1000;
+  text-align: left;
+}
+
+.map-parent {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.map-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
 }
 
 .coil-label {
@@ -32,7 +44,7 @@
 }
 
 .arc.selected-arc * {
-  stroke:black;
+  stroke: black;
 }
 
 .tooltip {
