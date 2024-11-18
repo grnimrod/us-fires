@@ -7,6 +7,7 @@ import {
     geoIdentity,
     scaleSequentialLog,
     interpolateOranges,
+    zoom,
 } from "d3";
 import { contours } from 'd3-contour'
 import { setUpContainer } from "./setUpContainer";
@@ -38,7 +39,7 @@ const lookupTable = [
     []             // 15: 1111, no line
 ];
 // Marching square thresholds
-const thresholds = [500, 5000, 20000, 40000, 120000, 500000, 1000000, 2000000];  // Adjust these levels as needed
+const thresholds = [100, 500, 5000, 20000, 40000, 120000, 500000, 1000000, 2000000];  // Adjust these levels as needed
 const colors = ['#00f', '#0f0', '#ff0', '#f80', '#f00', '#800'];  // Different colors for each level
 
 export async function createIsoplethMap(container, initialData) {
@@ -62,7 +63,7 @@ export async function createIsoplethMap(container, initialData) {
         .attr("stroke-width", 0.5)
         .attr("stroke-linejoin", "round")
         .attr("class", "state-borders")
-        .attr("d", path(topojson.mesh(topoJsonData, topoJsonData.objects.states)));
+        .attr("d", path(topojson.mesh(topoJsonData, topoJsonData.objects.nation)));
 
     const fireDataPoints = initialData[0].children.map((fireEntry) => {
         const [x, y] = projection([fireEntry.LONGITUDE, fireEntry.LATITUDE]);
@@ -79,6 +80,12 @@ export async function createIsoplethMap(container, initialData) {
     // });
 
     drawIsolines(g, fireDataPoints, containerWidth, containerHeight, path);
+    svg.call(zoom()
+        .extent([[0, 0], [containerWidth, containerHeight]])
+        .scaleExtent([1, 8])
+        .on("zoom", function zoomed(event, d) {
+            g.attr("transform", event.transform);
+        }));
 
     select(container).append(() => svg.node());
 
@@ -182,6 +189,7 @@ function drawIsolines(g, fireDataPoints, width, height, path) {
         .attr('stroke', 'black')  // Outline color
         .attr('stroke-width', 0.2);
 }
+
 
 // Marching squares algorithm to find contour lines
 function marchingSquares(grid, threshold, levelIndex, width, height) {

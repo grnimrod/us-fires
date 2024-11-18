@@ -5,6 +5,7 @@ import {
   geoPath,
   select,
   max,
+  zoom,
 } from "d3";
 import * as topojson from "topojson-client";
 import { setUpContainer } from "./setUpContainer";
@@ -77,6 +78,13 @@ export async function createChoroplethMap(container, initialData) {
 
   select(container).append(() => svg.node());
 
+  svg.call(zoom()
+  .extent([[0, 0], [containerWidth, containerHeight]])
+  .scaleExtent([1, 8])
+  .on("zoom", function zoomed(event, d) {
+      g.attr("transform", event.transform);
+  }));
+  
   return {
     updateMap(data) {
       // Create map along similar principle as above, only for a single object of the data array (corresponding to data of a single month)

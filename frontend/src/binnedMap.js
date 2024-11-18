@@ -6,6 +6,7 @@ import {
   max,
   interpolateOranges,
   lab,
+  zoom,
 } from "d3";
 import { hexbin } from "d3-hexbin";
 import * as topojson from "topojson-client";
@@ -74,6 +75,14 @@ export async function createBinnedMap(container, initialData) {
     .attr("stroke", (d) => lab(color(d.length)).darker());
 
   select(container).append(() => svg.node());
+
+  svg.call(zoom()
+  .extent([[0, 0], [containerWidth, containerHeight]])
+  .scaleExtent([1, 8])
+  .on("zoom", function zoomed(event, d) {
+      g.attr("transform", event.transform);
+      hexGroup.attr("transform", event.transform);
+  }));
 
   return {
     updateBinnedMap(data) {
