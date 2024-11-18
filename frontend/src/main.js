@@ -101,13 +101,17 @@ async function init() {
   const playButton = select("#play-button");
 
   playButton.on("click", function () {
-    const button = select(this);
-    if (button.text() == "Pause") {
+    if (playButton.text() == "Pause") {
       resetTimer();
+    } else if (playButton.text() == "Restart") {
+      isSliding = true;
+      sliderRange.value(0);
+      timer = setInterval(update, 50);
+      playButton.text("Pause");
     } else {
       isSliding = true;
       timer = setInterval(update, 50);
-      button.text("Pause");
+      playButton.text("Pause");
     }
   });
 
@@ -116,6 +120,7 @@ async function init() {
 
     if (offset >= months.length) {
       resetTimer();
+      playButton.text("Restart");
     } else {
       sliderRange.value(offset);
       // sliderRange.on("onchange")(offset);
@@ -129,7 +134,9 @@ async function init() {
   }
 
   sliderRange.on("end", function () {
-    if (playButton.text() == "Pause") {
+    if (sliderRange.value() == sliderRange.max()) {
+      playButton.text("Restart");
+    } else if (playButton.text() == "Pause" || playButton.text() == "Restart") {
       resetTimer();
     }
   });
