@@ -55,10 +55,15 @@ export async function createBinnedMap(container, initialData) {
     .x((d) => d[0])
     .y((d) => d[1]);
 
-  const fireDataPoints = initialData[0].children.map((fireEntry) => {
-    const [x, y] = projection([fireEntry.LONGITUDE, fireEntry.LATITUDE]);
-    return [x, y]; // Return the coordinates
-  });
+  const fireDataPoints = initialData[0].children
+    .filter((d) => {
+      const projected = projection([d.LONGITUDE, d.LATITUDE]);
+      return projected !== null;
+    })
+    .map((fireEntry) => {
+      const [x, y] = projection([fireEntry.LONGITUDE, fireEntry.LATITUDE]);
+      return [x, y]; // Return the coordinates
+    });
 
   const bins = hexbinGenerator(fireDataPoints);
 
@@ -76,22 +81,32 @@ export async function createBinnedMap(container, initialData) {
 
   select(container).append(() => svg.node());
 
-  svg.call(zoom()
-  .extent([[0, 0], [containerWidth, containerHeight]])
-  .scaleExtent([1, 8])
-  .on("zoom", function zoomed(event, d) {
-      g.attr("transform", event.transform);
-      hexGroup.attr("transform", event.transform);
-  }));
+  svg.call(
+    zoom()
+      .extent([
+        [0, 0],
+        [containerWidth, containerHeight],
+      ])
+      .scaleExtent([1, 8])
+      .on("zoom", function zoomed(event, d) {
+        g.attr("transform", event.transform);
+        hexGroup.attr("transform", event.transform);
+      })
+  );
 
   return {
     updateBinnedMap(data) {
       hexGroup.selectAll("path").remove();
 
-      const fireDataPoints = data.children.map((fireEntry) => {
-        const [x, y] = projection([fireEntry.LONGITUDE, fireEntry.LATITUDE]);
-        return [x, y];
-      });
+      const fireDataPoints = data.children
+        .filter((d) => {
+          const projected = projection([d.LONGITUDE, d.LATITUDE]);
+          return projected !== null;
+        })
+        .map((fireEntry) => {
+          const [x, y] = projection([fireEntry.LONGITUDE, fireEntry.LATITUDE]);
+          return [x, y];
+        });
 
       const bins = hexbinGenerator(fireDataPoints);
 
