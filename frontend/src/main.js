@@ -136,7 +136,8 @@ async function init() {
   sliderRange.on("end", function () {
     if (sliderRange.value() == sliderRange.max()) {
       playButton.text("Restart");
-    } else if (playButton.text() == "Pause" || playButton.text() == "Restart") {
+      sliderRange.value(sliderRange.max());
+    } else if (playButton.text() == "Pause") {
       resetTimer();
     }
   });
