@@ -31,7 +31,6 @@ const radians = 0.0174532925;
         let coils; //number of coils, based on data.length / segmentsPerCoil
         let coilWidth; //remaining chartRadius (after holeRadius removed), divided by coils + 1. I add 1 as the end of the coil moves out by 1 each time
         function convertTextToNumbers(d) {
-            //console.log(d);
             d.count = +d.count;
             d.date = dateParse(d.date);
             d.year = yearFormat(d.date);
@@ -45,8 +44,8 @@ export function createSpiralHeatmap(container, monthlyData){
     const containerBoundingClientRect = select(container)
     .node()
     .getBoundingClientRect();
-    const containerWidth = containerBoundingClientRect.width -200;
-    const containerHeight = containerBoundingClientRect.height -200;
+    const containerWidth = containerBoundingClientRect.width + 200;
+    const containerHeight = containerBoundingClientRect.height + 200;
     const radius = Math.min(containerWidth, containerHeight) / 4;
 
     /*let heatmap = spiralHeatmap(radius)
@@ -181,11 +180,11 @@ function spiralHeatmap (rad) {
           })
           .attr('x', function (d, i) {
             let labelAngle = i * arcAngle + arcAngle / 2
-            return x(labelAngle, labelRadius)
+            return x(labelAngle, (labelRadius + 10))
           })
           .attr('y', function (d, i) {
             let labelAngle = i * arcAngle + arcAngle / 2
-            return y(labelAngle, labelRadius)
+            return y(labelAngle, (labelRadius + 10))
           })
           .style('text-anchor', function (d, i) {
             return i < arcLabelsArray.length / 2 ? 'start' : 'end'
@@ -281,10 +280,10 @@ function spiralHeatmap (rad) {
   
         coilLabels
           .append('text')
-          .attr("transform", "translate("
-            + (0)
+          .attr("transform", function(d,i) {return "translate("
+            + (i*0.1 - 2)
             + ","
-            + (5) + ")")
+            + (5.2) + ")";})
           .attr('class', 'coil-label')
           .attr('x', 3)
           .attr('dy', -4)

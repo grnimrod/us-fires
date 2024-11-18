@@ -31,8 +31,9 @@
   fill: #000;
 }
 
-.arc.selected-arc * {
+.arc.selected-arc path {
   stroke:black;
+  paint-order:stroke;
 }
 
 .tooltip {
