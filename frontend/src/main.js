@@ -148,7 +148,7 @@ async function init() {
     sunburstChart.updateSunburst(monthlyFireCategoriesData[val]);
     // This is for performance concern. Simultaneouly updating the invisible isopleth map will block the main thread
     // TODO: Remove this if condition when performance optmization is done
-    if (document.querySelector("#fig5").style.display == "block") {
+    if (document.querySelector("#fig5").style.display != "none") {
       isoplethMap.updateIsoplethMap(monthStructure[val]);
     }
   });
