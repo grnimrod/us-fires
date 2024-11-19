@@ -24,15 +24,26 @@ async function init() {
   const monthlyFireCategoriesData = createMonthlyHierarchy(cleanData);
 
   let currentChart = "binnedMap";
-  const binnedMap = await createBinnedMap("#fig1", monthStructure);
+
+  document.querySelector("#map2").style.visibility = "hidden";
+  document.querySelector("#map3").style.visibility = "hidden";
+
+  const binnedMap = await createBinnedMap("#map1", monthStructure);
   const choroplethMap = await createChoroplethMap(
-    "#fig2",
+    "#map2",
     monthlyFiresPerState
   );
-  const isoplethMap = await createIsoplethMap("#fig5", monthStructure);
-  // Initially hide choroplethMap container since binnedMap is selected by default
-  document.querySelector("#fig2").style.display = "none";
-  document.querySelector("#fig5").style.display = "none";
+  const isoplethMap = await createIsoplethMap("#map3", monthStructure);
+
+  // const binnedMap = await createBinnedMap("#fig1", monthStructure);
+  // const choroplethMap = await createChoroplethMap(
+  //   "#fig2",
+  //   monthlyFiresPerState
+  // );
+  // const isoplethMap = await createIsoplethMap("#fig5", monthStructure);
+  // // Initially hide choroplethMap container since binnedMap is selected by default
+  // document.querySelector("#fig2").style.display = "none";
+  // document.querySelector("#fig5").style.display = "none";
 
   const sunburstChart = createSunburstChart("#fig3", monthlyFireCategoriesData);
   const spiralHeatmap = createSpiralHeatmap("#fig4", monthlyFiresCount);
@@ -76,22 +87,40 @@ async function init() {
     const selectedChart = event.target.value;
 
     // Toggle visibility instead of creating a new map
+
     if (selectedChart === "binnedMap") {
-      document.querySelector("#fig1").style.display = "block";
-      document.querySelector("#fig2").style.display = "none";
-      document.querySelector("#fig5").style.display = "none";
+      document.querySelector("#map1").style.visibility = "visible";
+      document.querySelector("#map2").style.visibility = "hidden";
+      document.querySelector("#map3").style.visibility = "hidden";
       currentChart = "binnedMap";
     } else if (selectedChart === "choroplethMap") {
-      document.querySelector("#fig1").style.display = "none";
-      document.querySelector("#fig2").style.display = "block";
-      document.querySelector("#fig5").style.display = "none";
+      document.querySelector("#map1").style.visibility = "hidden";
+      document.querySelector("#map2").style.visibility = "visible";
+      document.querySelector("#map3").style.visibility = "hidden";
       currentChart = "choroplethMap";
     } else if (selectedChart === "isoplethMap") {
-      document.querySelector("#fig1").style.display = "none";
-      document.querySelector("#fig2").style.display = "none";
-      document.querySelector("#fig5").style.display = "block";
+      document.querySelector("#map1").style.visibility = "hidden";
+      document.querySelector("#map2").style.visibility = "hidden";
+      document.querySelector("#map3").style.visibility = "visible";
       currentChart = "isoplethMap";
     }
+
+    // if (selectedChart === "binnedMap") {
+    //   document.querySelector("#fig1").style.display = "block";
+    //   document.querySelector("#fig2").style.display = "none";
+    //   document.querySelector("#fig5").style.display = "none";
+    //   currentChart = "binnedMap";
+    // } else if (selectedChart === "choroplethMap") {
+    //   document.querySelector("#fig1").style.display = "none";
+    //   document.querySelector("#fig2").style.display = "block";
+    //   document.querySelector("#fig5").style.display = "none";
+    //   currentChart = "choroplethMap";
+    // } else if (selectedChart === "isoplethMap") {
+    //   document.querySelector("#fig1").style.display = "none";
+    //   document.querySelector("#fig2").style.display = "none";
+    //   document.querySelector("#fig5").style.display = "block";
+    //   currentChart = "isoplethMap";
+    // }
   });
 
   // Set up play button functionality
@@ -149,7 +178,7 @@ async function init() {
     sunburstChart.updateSunburst(monthlyFireCategoriesData[val]);
     // This is for performance concern. Simultaneouly updating the invisible isopleth map will block the main thread
     // TODO: Remove this if condition when performance optmization is done
-    if (document.querySelector("#fig5").style.display != "none") {
+    if (document.querySelector("#map3").style.visibility != "hidden") {
       isoplethMap.updateIsoplethMap(monthStructure[val]);
     }
   });
