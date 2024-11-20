@@ -35,16 +35,6 @@ async function init() {
   );
   const isoplethMap = await createIsoplethMap("#map3", monthStructure);
 
-  // const binnedMap = await createBinnedMap("#fig1", monthStructure);
-  // const choroplethMap = await createChoroplethMap(
-  //   "#fig2",
-  //   monthlyFiresPerState
-  // );
-  // const isoplethMap = await createIsoplethMap("#fig5", monthStructure);
-  // // Initially hide choroplethMap container since binnedMap is selected by default
-  // document.querySelector("#fig2").style.display = "none";
-  // document.querySelector("#fig5").style.display = "none";
-
   const sunburstChart = createSunburstChart("#fig3", monthlyFireCategoriesData);
   const spiralHeatmap = createSpiralHeatmap("#fig4", monthlyFiresCount);
   spiralHeatmap.updateHeatmap();
@@ -75,7 +65,7 @@ async function init() {
     .min(0)
     .max(monthIndex.length - 1)
     .step(1)
-    .width(500)
+    .width(300)
     .tickValues(tickValues)
     .tickFormat((i) => timeFormat("%Y-%m")(monthIndex[i].date))
     .ticks(numTicks);
@@ -104,23 +94,6 @@ async function init() {
       document.querySelector("#map3").style.visibility = "visible";
       currentChart = "isoplethMap";
     }
-
-    // if (selectedChart === "binnedMap") {
-    //   document.querySelector("#fig1").style.display = "block";
-    //   document.querySelector("#fig2").style.display = "none";
-    //   document.querySelector("#fig5").style.display = "none";
-    //   currentChart = "binnedMap";
-    // } else if (selectedChart === "choroplethMap") {
-    //   document.querySelector("#fig1").style.display = "none";
-    //   document.querySelector("#fig2").style.display = "block";
-    //   document.querySelector("#fig5").style.display = "none";
-    //   currentChart = "choroplethMap";
-    // } else if (selectedChart === "isoplethMap") {
-    //   document.querySelector("#fig1").style.display = "none";
-    //   document.querySelector("#fig2").style.display = "none";
-    //   document.querySelector("#fig5").style.display = "block";
-    //   currentChart = "isoplethMap";
-    // }
   });
 
   // Set up play button functionality
@@ -152,7 +125,6 @@ async function init() {
       playButton.text("Restart");
     } else {
       sliderRange.value(offset);
-      // sliderRange.on("onchange")(offset);
     }
   }
 
@@ -186,7 +158,7 @@ async function init() {
   const gRange = select(sliderContainer)
     .append("svg")
     .attr("class", "slider")
-    .attr("width", 700)
+    .attr("width", 500)
     .attr("height", sliderHeight)
     .append("g")
     .attr("transform", "translate(95, 10)");
