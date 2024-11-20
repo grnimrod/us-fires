@@ -8,12 +8,34 @@
   padding-top: 3%;
 }
 
-#slider-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.slider-parent {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(3, auto);
   width: 100%;
-  height: 200px;
+  height: auto;
+}
+
+.slider-item {
+  width: 100%;
+  height: 100%;
+}
+
+#play-button {
+  grid-column: 1;
+  grid-row: 1;
+  width: fit-content;
+  height: fit-content;
+}
+
+#hist-timeline {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+#slider {
+  grid-column: 1;
+  grid-row: 3;
 }
 
 #dropdown-container {
@@ -44,8 +66,8 @@
 }
 
 .arc.selected-arc path {
-  stroke:black;
-  paint-order:stroke;
+  stroke: black;
+  paint-order: stroke;
 }
 
 .tooltip {

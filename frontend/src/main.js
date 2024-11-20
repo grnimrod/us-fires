@@ -39,9 +39,7 @@ async function init() {
   const spiralHeatmap = createSpiralHeatmap("#fig4", monthlyFiresCount);
   spiralHeatmap.updateHeatmap();
 
-  const sliderContainer = "#slider-container";
-  const sliderHeight = 100;
-  const histTimeline = createHistogram(sliderContainer, cleanData);
+  const histTimeline = createHistogram("#histogram-timeline", cleanData);
 
   // We use these to set up slider with custom steps
   // They are based on the data of the choropleth map, but all data will follow the same structure of
@@ -53,6 +51,9 @@ async function init() {
   }));
 
   // Create slider and set up interactions
+  const sliderDiv = select("#slider");
+  const sliderDivWidth = sliderDiv.node().getBoundingClientRect().width;
+
   const numTicks = 6;
   const tickInterval = Math.floor((monthIndex.length - 1) / (numTicks - 1));
 
@@ -65,7 +66,7 @@ async function init() {
     .min(0)
     .max(monthIndex.length - 1)
     .step(1)
-    .width(300)
+    .width(sliderDivWidth - 96.028)
     .tickValues(tickValues)
     .tickFormat((i) => timeFormat("%Y-%m")(monthIndex[i].date))
     .ticks(numTicks);
@@ -155,13 +156,13 @@ async function init() {
     }
   });
 
-  const gRange = select(sliderContainer)
+  const gRange = sliderDiv
     .append("svg")
     .attr("class", "slider")
-    .attr("width", 500)
-    .attr("height", sliderHeight)
+    .attr("width", sliderDivWidth)
+    .attr("height", 100)
     .append("g")
-    .attr("transform", "translate(95, 10)");
+    .attr("transform", "translate(40, 10)");
 
   gRange.call(sliderRange);
 }

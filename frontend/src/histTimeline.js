@@ -1,16 +1,20 @@
-import { bin, scaleLinear, max, select } from "d3";
+import { create, bin, scaleLinear, max, select } from "d3";
 import { setUpContainer } from "./setUpContainer";
 
 export function createHistogram(container, data) {
-  const { svg, containerWidth } = setUpContainer(container);
+  const { containerWidth } = setUpContainer(container);
 
   const height = 70;
-  //   const margin = {
-  //     top: 20,
-  //     right: 20,
-  //     bottom: 20,
-  //     left: 20,
-  //   };
+  const margin = {
+    top: 20,
+    right: 20,
+    bottom: 20,
+    left: 20,
+  };
+
+  const svg = create("svg")
+    .attr("width", containerWidth)
+    .attr("height", height);
 
   const distinctDates = Array.from(
     new Set(
@@ -35,7 +39,7 @@ export function createHistogram(container, data) {
 
   const xScale = scaleLinear()
     .domain([bins[0].x0, bins[bins.length - 1].x1])
-    .range([0, containerWidth]);
+    .range([margin.left, containerWidth - margin.right]);
 
   const yScale = scaleLinear()
     .domain([0, max(bins, (d) => d.length)])
@@ -43,7 +47,7 @@ export function createHistogram(container, data) {
 
   svg
     .append("g")
-    .attr("transform", `translate(0, 130)`)
+    // .attr("transform", `translate(0, 130)`)
     .selectAll()
     .data(bins)
     .join("rect")
