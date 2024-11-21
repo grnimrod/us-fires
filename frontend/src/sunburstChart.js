@@ -83,13 +83,20 @@ export function createSunburstChart(container, monthlyData) {
 
   // Even if we decide to go with direct labeling, we need to use tspan within the text element
   function labelFormat(selection, text) {
-    console.log(text);
     const words = text.replace(/\//g, "/\n").split(/\s/);
 
     words.forEach((word, i) => {
       selection
         .append("tspan")
-        .text(word.slice(0, 3).concat("."))
+        .text(
+          word.includes("/")
+            ? word.length > 3
+              ? word.slice(0, 3).concat("./")
+              : word.concat("/")
+            : word.length > 4
+            ? word.slice(0, 4).concat(".")
+            : word
+        )
         .attr("x", 0)
         .attr("dy", i === 0 ? "0em" : "1em");
     });
