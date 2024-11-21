@@ -35,8 +35,8 @@ async function init() {
   );
   const isoplethMap = await createIsoplethMap("#map3", monthStructure);
 
-  const sunburstChart = createSunburstChart("#fig3", monthlyFireCategoriesData);
-  const spiralHeatmap = createSpiralHeatmap("#fig4", monthlyFiresCount);
+  const sunburstChart = createSunburstChart("#fig4", monthlyFireCategoriesData);
+  const spiralHeatmap = createSpiralHeatmap("#fig3", monthlyFiresCount);
   spiralHeatmap.updateHeatmap();
 
   const histTimeline = createHistogram("#histogram-timeline", cleanData);

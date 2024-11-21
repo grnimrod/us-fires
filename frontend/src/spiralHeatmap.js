@@ -46,7 +46,7 @@ export function createSpiralHeatmap(container, monthlyData) {
     .getBoundingClientRect();
   const containerWidth = containerBoundingClientRect.width + 200;
   const containerHeight = containerBoundingClientRect.height + 200;
-  const radius = Math.min(containerWidth, containerHeight) / 4;
+  const radius = Math.min(containerWidth, containerHeight) / 2;
 
   /*let heatmap = spiralHeatmap(radius)
     .radius(radius)

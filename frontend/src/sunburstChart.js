@@ -82,12 +82,18 @@ export function createSunburstChart(container, monthlyData) {
     .text(root.value);
 
   // Even if we decide to go with direct labeling, we need to use tspan within the text element
-  // function labelFormat(text) {
-  //   text = text.replace(/ /g, "\n");
-  //   text = text.replace(/\//g, "/\n");
+  function labelFormat(selection, text) {
+    console.log(text);
+    const words = text.replace(/\//g, "/\n").split(/\s/);
 
-  //   return text;
-  // }
+    words.forEach((word, i) => {
+      selection
+        .append("tspan")
+        .text(word.slice(0, 3).concat("."))
+        .attr("x", 0)
+        .attr("dy", i === 0 ? "0em" : "1em");
+    });
+  }
 
   function labelTransform(d) {
     const x = (((d.x0 + d.x1) / 2) * 180) / Math.PI;
@@ -108,7 +114,12 @@ export function createSunburstChart(container, monthlyData) {
     .join("text")
     .attr("transform", (d) => labelTransform(d.current))
     .attr("dy", "0.35em")
-    .text((d) => d.data.name);
+    .each(function (d) {
+      const textElement = select(this);
+      console.log(textElement);
+      labelFormat(textElement, d.data.name);
+    });
+  // .text((d) => labelFormat(d.data.name));
 
   select(container).append(() => svg.node());
 
@@ -168,7 +179,10 @@ export function createSunburstChart(container, monthlyData) {
         .join("text")
         .attr("transform", (d) => labelTransform(d.current))
         .attr("dy", "0.35em")
-        .text((d) => d.data.name);
+        .each(function (d) {
+          const textElement = select(this);
+          labelFormat(textElement, d.data.name);
+        });
     },
   };
 }
