@@ -6,6 +6,7 @@ import {
   hierarchy,
   arc,
   create,
+  timeFormat,
 } from "d3";
 
 export function createSunburstChart(container, monthlyData) {
@@ -16,7 +17,15 @@ export function createSunburstChart(container, monthlyData) {
     .getBoundingClientRect();
   const containerWidth = containerBoundingClientRect.width;
   const containerHeight = containerBoundingClientRect.height;
-  const radius = Math.min(containerWidth, containerHeight) / 6;
+
+  const margin = {
+    top: 40,
+    right: 20,
+    bottom: 20,
+    left: 20,
+  };
+
+  const radius = Math.min(containerWidth, containerHeight - margin.top) / 6;
 
   const color = scaleOrdinal(schemeObservable10);
 
@@ -40,17 +49,23 @@ export function createSunburstChart(container, monthlyData) {
     .outerRadius((d) => Math.max(d.y0 * radius, d.y1 * radius - 1));
 
   const svg = create("svg")
-    .attr("viewBox", [
-      -containerWidth / 2,
-      -containerHeight / 2,
-      containerWidth,
-      containerHeight,
-    ])
+    .attr("viewBox", [0, 0, containerWidth, containerHeight])
     .style("width", "100%")
     .style("height", "100%");
 
+  svg
+    .append("text")
+    .attr("x", containerWidth / 2 - 3 * radius)
+    .attr("y", margin.top / 2)
+    .attr("font-size", "20px")
+    .text(`${timeFormat("%Y-%m")(monthlyData[0].month)}`);
+
   const arcs = svg
     .append("g")
+    .attr(
+      "transform",
+      `translate(${containerWidth / 2}, ${(containerHeight + margin.top) / 2})`
+    )
     .selectAll("path")
     .data(root.descendants().slice(1))
     .join("path")
@@ -74,6 +89,10 @@ export function createSunburstChart(container, monthlyData) {
 
   svg
     .append("text")
+    .attr(
+      "transform",
+      `translate(${containerWidth / 2}, ${(containerHeight + margin.top) / 2})`
+    )
     .attr("text-anchor", "middle")
     .attr("dy", "0.3em")
     .attr("font-size", `${radius * 0.025}em`)
@@ -113,8 +132,12 @@ export function createSunburstChart(container, monthlyData) {
     })`;
   }
 
-  const labels = svg
+  const labels = svg // some weird behavior, on update adds new one doesn't remove existing one
     .append("g")
+    .attr(
+      "transform",
+      `translate(${containerWidth / 2}, ${(containerHeight + margin.top) / 2})`
+    )
     .attr("pointer-events", "none")
     .attr("text-anchor", "middle")
     .attr("font-size", 10)
@@ -148,8 +171,21 @@ export function createSunburstChart(container, monthlyData) {
       partitionSunburst(newRoot);
       newRoot.each((d) => (d.current = d));
 
+      svg
+        .append("text")
+        .attr("x", containerWidth / 2 - 3 * radius)
+        .attr("y", margin.top / 2)
+        .attr("font-size", "20px")
+        .text(`${timeFormat("%Y-%m")(data.month)}`);
+
       const newArcs = svg
         .select("g")
+        .attr(
+          "transform",
+          `translate(${containerWidth / 2}, ${
+            (containerHeight + margin.top) / 2
+          })`
+        )
         .selectAll("path")
         .data(newRoot.descendants().slice(1))
         .join("path")
@@ -172,6 +208,12 @@ export function createSunburstChart(container, monthlyData) {
 
       svg
         .append("text")
+        .attr(
+          "transform",
+          `translate(${containerWidth / 2}, ${
+            (containerHeight + margin.top) / 2
+          })`
+        )
         .attr("text-anchor", "middle")
         .attr("x", 0)
         .attr("y", 0)
@@ -181,6 +223,12 @@ export function createSunburstChart(container, monthlyData) {
 
       const newLabels = svg
         .append("g")
+        .attr(
+          "transform",
+          `translate(${containerWidth / 2}, ${
+            (containerHeight + margin.top) / 2
+          })`
+        )
         .attr("pointer-events", "none")
         .attr("text-anchor", "middle")
         .attr("font-size", 10)
