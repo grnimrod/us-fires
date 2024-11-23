@@ -75,13 +75,14 @@ export function createSunburstChart(container, monthlyData) {
   svg
     .append("text")
     .attr("text-anchor", "middle")
-    .attr("x", 0)
-    .attr("y", 0)
     .attr("dy", "0.3em")
     .attr("font-size", `${radius * 0.025}em`)
     .text(root.value);
 
-  // Even if we decide to go with direct labeling, we need to use tspan within the text element
+  function labelVisible(d) {
+    return (d.y1 - d.y0) * (d.x1 - d.x0) > 0.04;
+  }
+
   function labelFormat(selection, text) {
     const words = text.replace(/\//g, "/\n").split(/\s/);
 
@@ -98,14 +99,18 @@ export function createSunburstChart(container, monthlyData) {
             : word
         )
         .attr("x", 0)
-        .attr("dy", i === 0 ? "0em" : "1em");
+        .attr("dy", i === 0 ? "0.3em" : "1em");
     });
   }
 
-  function labelTransform(d) {
+  function labelTransform(d, lineCount) {
     const x = (((d.x0 + d.x1) / 2) * 180) / Math.PI;
     const y = ((d.y0 + d.y1) / 2) * radius;
-    return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
+
+    const offset = (lineCount - 1) * 4;
+    return `rotate(${x - 90}) translate(${y},${offset}) rotate(${
+      x < 180 ? 0 : 180
+    })`;
   }
 
   const labels = svg
@@ -119,14 +124,15 @@ export function createSunburstChart(container, monthlyData) {
 
   labels
     .join("text")
-    .attr("transform", (d) => labelTransform(d.current))
-    .attr("dy", "0.35em")
+    .attr("fill-opacity", (d) => +labelVisible(d.current))
+    .attr("transform", function (d) {
+      const lineCount = d.data.name.split(/\s|\/|\\n/).length;
+      return labelTransform(d.current, lineCount);
+    })
     .each(function (d) {
       const textElement = select(this);
-      console.log(textElement);
       labelFormat(textElement, d.data.name);
     });
-  // .text((d) => labelFormat(d.data.name));
 
   select(container).append(() => svg.node());
 
@@ -184,8 +190,11 @@ export function createSunburstChart(container, monthlyData) {
 
       newLabels
         .join("text")
-        .attr("transform", (d) => labelTransform(d.current))
-        .attr("dy", "0.35em")
+        .attr("fill-opacity", (d) => +labelVisible(d.current))
+        .attr("transform", function (d) {
+          const lineCount = d.data.name.split(/\s|\/|\\n/).length;
+          return labelTransform(d.current, lineCount);
+        })
         .each(function (d) {
           const textElement = select(this);
           labelFormat(textElement, d.data.name);
