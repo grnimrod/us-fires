@@ -1,4 +1,4 @@
-import { select, create, scaleSequential, scaleSequentialLog, interpolateOranges } from "d3";
+import { select, create, scaleSequential, scaleSequentialLog, max, min, interpolateOranges } from "d3";
 import { legend } from './colorLegend';
 
 const radians = 0.0174532925;
@@ -23,7 +23,7 @@ const months = [
   "Nov",
   "Dec",
 ];
-const scale =[1, 7378];
+
 
 //CHART OPTIONS
 const holeRadiusProportion = 0.3; //fraction of chartRadius. 0 gives you some pointy arcs in the centre.
@@ -42,7 +42,7 @@ function convertTextToNumbers(d) {
 export function createSpiralHeatmap(container, monthlyData, slider) {
   // const { svg, containerWidth, containerHeight } = setUpContainer(container);
   //const radius = Math.min(containerWidth, containerHeight)/2;
-
+  const scale =[1, max(monthlyData, (monthEntry) => monthEntry.count)];
   
 
   const containerBoundingClientRect = select(container)
@@ -123,8 +123,6 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
   });
 
   let element = d3.select("#fig3").select("svg");
-  //element = d3.selectAll(".spiralLegend").attr("transform", "translate(-200,-200)");
-  console.log(element);
 
   select(container).append(() => svg.node());
 
