@@ -19,10 +19,12 @@ const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
 // Define the grid resolution (number of cells in x and y directions)
 let fireDataPoints;
-let gridResolutionX = 200;
+let gridResolutionX = 500;
 let gridResolutionY;
 let tooltipIsoband;
 let tooltipFire;
+let prevZoomingScale = 1;
+let allContours = {}
 
 // Lookup table for Marching Squares - 16 configurations (0 to 15)
 const lookupTable = [
@@ -44,7 +46,7 @@ const lookupTable = [
     []             // 15: 1111, no line
 ];
 // Marching square thresholds
-const thresholds = [100, 500, 5000, 20000, 120000, 500000, 1000000, 2000000];  // Adjust these levels as needed
+const thresholds = [.1, .5, 5, 20, 120, 500, 1000, 2000];  // Adjust these levels as needed
 const colors = ['#00f', '#0f0', '#ff0', '#f80', '#f00', '#800'];  // Different colors for each level
 
 export async function createIsoplethMap(container, initialData) {
@@ -67,7 +69,17 @@ export async function createIsoplethMap(container, initialData) {
         .attr("stroke-width", 0.5)
         .attr("stroke-linejoin", "round")
         .attr("class", "state-borders")
-        .attr("d", path(topojson.mesh(topoJsonData, topoJsonData.objects.nation)));
+        .attr("d", path(topojson.mesh(topoJsonData, topoJsonData.objects.states)));
+
+    g.append("path")
+        .attr("fill", "none")
+        .attr("stroke", "#777")
+        .attr("stroke-width", 0.3)
+        .attr("stroke-linejoin", "round")
+        .attr("class", "county-borders")
+        .attr("d", path(topojson.mesh(topoJsonData, topoJsonData.objects.counties)))
+        .style("visibility", "hidden");
+
 
     fireDataPoints = initialData[0].children.map((fireEntry) => {
         const [x, y] = projection([fireEntry.LONGITUDE, fireEntry.LATITUDE]);
@@ -112,24 +124,35 @@ export async function createIsoplethMap(container, initialData) {
             .attr("selected", false)
     });
 
-    // fireDataPoints.forEach(([x, y]) => {
-    //     g.append("circle")
-    //         .attr("cx", x)
-    //         .attr("cy", y)
-    //         .attr("r", 2) // Adjust the radius of the circle to your preference
-    //         .attr("fill", "red") // Color the points
-    //         .attr("opacity", 0.75); // Add some transparency if needed
-    // });
-
     svg.call(zoom()
         .extent([[0, 0], [containerWidth, containerHeight]])
         .scaleExtent([1, 12])
         .on("zoom", function zoomed(event, d) {
             g.attr("transform", event.transform);
             tooltipFire.style('opacity', 0);
+
+            const currentZoomingScale = event.transform.k;
+            if (currentZoomingScale > 2.5 && prevZoomingScale <= 2.5)
+            {
+                g.select(".county-borders")
+                    .style("visibility", "visible");
+            }
+            if (currentZoomingScale <= 2.5 && prevZoomingScale > 2.5)
+            {
+                g.select(".county-borders")
+                    .style("visibility", "hidden");
+            }
+            prevZoomingScale = currentZoomingScale
         }));
 
-    drawIsolines(projection, g, containerWidth, containerHeight);
+    // This method computes and generates all contours, and store them locally
+    //     It only needs to be called once
+    const yearMonth = initialData[0].month.getFullYear() + "-" + (initialData[0].month.getMonth()+1);
+
+    loadAndDrawContours(containerWidth, containerHeight, gridResolutionX, gridResolutionY, yearMonth)
+        .then(contours => {
+            drawIsolines(contours, g, containerWidth);
+        })
 
     select(container).append(() => svg.node());
 
@@ -153,54 +176,17 @@ export async function createIsoplethMap(container, initialData) {
             g.selectAll('.isopleth-path').remove();
             g.selectAll('.highlighted-point').remove();
 
-            drawIsolines(projection, g, containerWidth, containerHeight);
+            const yearMonth = data.month.getFullYear() + "-" + (data.month.getMonth()+1);
+
+            loadAndDrawContours(containerWidth, containerHeight, gridResolutionX, gridResolutionY, yearMonth)
+                .then(contours => {
+                    drawIsolines(contours, g, containerWidth);
+                })
         }
     };
 }
 
-
-function drawIsolines(projection, g, width, height) {
-    // Create a 2D array for the grid
-    const grid = [];
-    // Initialize the grid with values influenced by fireSize and proximity
-    for (let i = 0; i < gridResolutionY; i++) {
-        // const row = [];
-        for (let j = 0; j < gridResolutionX; j++) {
-            const x =  width * (j / gridResolutionX);
-            const y =  height * (i / gridResolutionY);
-            // Initialize the cell value
-            let value = 0;
-            // Add contribution from each fire point, scaled by fire size and proximity
-            fireDataPoints.forEach(([fx, fy, fireSize]) => {
-                const dist = Math.hypot(fx - x, fy - y);
-                const influence = Math.exp(-dist); // Fire size influence diminishes with distance
-                value += fireSize * influence; // Higher fire size has more influence
-            });
-
-            // row.push(value*1000);  // Scale up to make values visible
-            grid.push(value*1000);
-        }
-    };
-    // Draw contours
-    // thresholds.forEach((threshold, levelIndex) => {
-    //     // Call the marchingSquares algorithm with a desired threshold for the contour level
-    //     const contours = marchingSquares(grid, threshold, levelIndex, width, height); // Adjust threshold based on fireSize influence
-    //     // Add the isopleth lines (contours) to the map
-    //     g.selectAll(`path.isopleth.level-${levelIndex}`)
-    //         .data(contours)
-    //         .enter()
-    //         .append("path")
-    //         .attr("class", `isopleth level-${levelIndex}`)
-    //         .attr("d", d => line()(d)) // Create a line for each contour segment
-    //         .attr("fill", "none")
-    //         .attr("stroke", colors[levelIndex]) // Color for the isopleth lines
-    //         .attr("stroke-width", 0.5);
-    // })
-
-    const countoursGenerator = contours()
-        .size([gridResolutionX, gridResolutionY])
-        .thresholds(thresholds);
-    const polygons = countoursGenerator(grid);
+function drawIsolines(polygons, g, width) {
     const colorScale = scaleSequentialLog()
         .domain([min(thresholds), max(thresholds)])
         .interpolator(interpolateOranges);
@@ -244,7 +230,7 @@ function drawIsolines(projection, g, width, height) {
                     .attr("r", 1)
                     .attr("fill", "yellow")
                     .attr('stroke', 'black')
-                    .attr('stroke-width', 0.5)
+                    .attr('stroke-width', 0.25)
                     .attr('cursor', 'pointer')
                     .on('mouseover', function(event, d) {
                         d3.select(this)
@@ -295,6 +281,72 @@ function drawIsolines(projection, g, width, height) {
         .attr('stroke-width', 0.2)
 }
 
+async function loadAndDrawContours(width, height, gridResolutionX, gridResolutionY, yearMonth) {
+    if (Object.keys(allContours).length == 0) {
+        try {
+            const response = await fetch("../contours_by_months.json");
+            allContours = await response.json();
+        } catch (error) {
+            console.error("Error loading JSON:", error);
+            allContours = {};
+        }
+    }
+
+    if (allContours[yearMonth]) {
+        return allContours[yearMonth];
+    }
+
+    const polygons = await computeContours(width, height, gridResolutionX, gridResolutionY);
+    allContours[yearMonth] = polygons;
+
+    console.log("%s contours calculation finish", yearMonth);
+
+    // Save the computed polygons at the end
+    // if (yearMonth == "2015-12") {
+    //     saveContoursToFile();
+    // }
+
+    return polygons
+}
+
+async function computeContours(width, height, gridResolutionX, gridResolutionY) {
+    // Create a 2D array for the grid
+    const grid = [];
+    // Initialize the grid with values influenced by fireSize and proximity
+    for (let i = 0; i < gridResolutionY; i++) {
+        // const row = [];
+        for (let j = 0; j < gridResolutionX; j++) {
+            const x =  width * (j / gridResolutionX);
+            const y =  height * (i / gridResolutionY);
+            // Initialize the cell value
+            let value = 0;
+            // Add contribution from each fire point, scaled by fire size and proximity
+            fireDataPoints.forEach(([fx, fy, fireSize]) => {
+                const dist = Math.hypot(fx - x, fy - y);
+                const influence = Math.exp(-dist); // Fire size influence diminishes with distance
+                value += fireSize * influence; // Higher fire size has more influence
+            });
+            grid.push(value);
+        }
+    };
+
+    const countoursGenerator = contours()
+        .size([gridResolutionX, gridResolutionY])
+        .thresholds(thresholds);
+    const polygons = countoursGenerator(grid);
+
+    return polygons
+}
+
+function saveContoursToFile() {
+    const jsonString = JSON.stringify(allContours, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = "contours_by_months.json";
+    link.click();
+}
+
 // Function to highlight influencing data points
 function highlightInfluencingDataPoints(event, contourPolygons, scaleFactor) {
     let [clickX, clickY] = pointer(event);
@@ -311,7 +363,7 @@ function highlightInfluencingDataPoints(event, contourPolygons, scaleFactor) {
         // Calculate the distance from the clicked point to the fire data point
         const dist = Math.sqrt(Math.pow(clickX - x, 2) + Math.pow(clickY - y, 2));
         // Calculate the contribution of this point based on distance and fire size
-        const contribution = fireSize * Math.exp(-dist) * 1000;
+        const contribution = fireSize * Math.exp(-dist);
         // Set a threshold for significant contribution and filter accordingly
         // Adjust the threshold as needed for your dataset
         return contribution >= bandValueLow/fireDataPoints.length && contribution < bandValueHigh/fireDataPoints.length;
