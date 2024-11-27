@@ -9,6 +9,7 @@ import {
     interpolateRdPu,
     zoom,
     pointer,
+    scaleThreshold,
 } from "d3";
 import { contours } from 'd3-contour';
 import { legend } from './colorLegend';
@@ -48,7 +49,10 @@ const lookupTable = [
 ];
 // Marching square thresholds
 const thresholds = [.1, .5, 5, 20, 120, 500, 1000, 2000];  // Adjust these levels as needed
-const colors = ['#00f', '#0f0', '#ff0', '#f80', '#f00', '#800'];  // Different colors for each level
+const colorScale = scaleSequentialLog()
+    .domain([min(thresholds), max(thresholds)])
+    .interpolator(interpolateRdPu);
+
 
 export async function createIsoplethMap(container, initialData) {
     const topoJsonData = await fetch(usAtlasUrl).then((response) => 
@@ -164,9 +168,9 @@ export async function createIsoplethMap(container, initialData) {
             drawIsolines(contours, g, containerWidth);
         })
 
-    legend(scaleSequentialLog(thresholds, interpolateRdPu), svg, {
+    legend(scaleThreshold(thresholds, thresholds.map(v => colorScale(v))), svg, {
         title: "Fire Influence Index",
-        tickSize: 1
+        tickSize: 0
     });
 
     select(container).append(() => svg.node());
@@ -202,10 +206,6 @@ export async function createIsoplethMap(container, initialData) {
 }
 
 function drawIsolines(polygons, g, width) {
-    const colorScale = scaleSequentialLog()
-        .domain([min(thresholds), max(thresholds)])
-        .interpolator(interpolateRdPu);
-
     g.selectAll('path.isopleth-band')
         .data(polygons)
         .enter()
