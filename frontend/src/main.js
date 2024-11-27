@@ -15,6 +15,25 @@ import {
   countFiresPerMonth,
 } from "./prepareFiresData.js";
 
+class EventEmitter {
+  constructor() {
+    this.events = {};
+  }
+
+  on(event, listener) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(listener);
+  }
+
+  emit(event, data) {
+    if (this.events[event]) {
+      this.events[event].forEach((listener) => listener(data));
+    }
+  }
+}
+
 async function init() {
   const firesData = await fetchFiresData();
   const cleanData = cleanFiresData(firesData);
@@ -28,12 +47,24 @@ async function init() {
   document.querySelector("#map2").style.visibility = "hidden";
   document.querySelector("#map3").style.visibility = "hidden";
 
-  const binnedMap = await createBinnedMap("#map1", monthStructure);
+  const eventEmitter = new EventEmitter();
+  let isSliding = false;
+
+  const binnedMap = await createBinnedMap(
+    "#map1",
+    monthStructure,
+    eventEmitter
+  );
   const choroplethMap = await createChoroplethMap(
     "#map2",
-    monthlyFiresPerState
+    monthlyFiresPerState,
+    eventEmitter
   );
-  const isoplethMap = await createIsoplethMap("#map3", monthStructure);
+  const isoplethMap = await createIsoplethMap(
+    "#map3",
+    monthStructure,
+    eventEmitter
+  );
 
   const sunburstChart = createSunburstChart("#fig4", monthlyFireCategoriesData);
   const spiralHeatmap = createSpiralHeatmap("#fig3", monthlyFiresCount);
@@ -98,7 +129,7 @@ async function init() {
   });
 
   // Set up play button functionality
-  let isSliding = false;
+
   let timer;
 
   const playButton = select("#play-button");
@@ -109,12 +140,14 @@ async function init() {
     } else if (playButton.text() == "Restart") {
       isSliding = true;
       sliderRange.value(0);
-      timer = setInterval(update, 50);
+      timer = setInterval(update, 150);
       playButton.text("Pause");
+      eventEmitter.emit("slidingChange", isSliding);
     } else {
       isSliding = true;
-      timer = setInterval(update, 50);
+      timer = setInterval(update, 150);
       playButton.text("Pause");
+      eventEmitter.emit("slidingChange", isSliding);
     }
   });
 
@@ -133,6 +166,7 @@ async function init() {
     isSliding = false;
     clearInterval(timer);
     playButton.text("Play");
+    eventEmitter.emit("slidingChange", isSliding);
   }
 
   sliderRange.on("end", function () {

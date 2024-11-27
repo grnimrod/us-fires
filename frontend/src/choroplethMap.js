@@ -6,13 +6,18 @@ import {
   select,
   max,
   zoom,
+  timeFormat,
 } from "d3";
 import * as topojson from "topojson-client";
 import { setUpContainer } from "./setUpContainer";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
-export async function createChoroplethMap(container, initialData) {
+export async function createChoroplethMap(
+  container,
+  initialData,
+  eventEmitter
+) {
   const topoJsonData = await fetch(usAtlasUrl).then((response) =>
     response.json()
   );
@@ -78,13 +83,33 @@ export async function createChoroplethMap(container, initialData) {
 
   select(container).append(() => svg.node());
 
-  svg.call(zoom()
-  .extent([[0, 0], [containerWidth, containerHeight]])
-  .scaleExtent([1, 8])
-  .on("zoom", function zoomed(event, d) {
-      g.attr("transform", event.transform);
-  }));
-  
+  svg.call(
+    zoom()
+      .extent([
+        [0, 0],
+        [containerWidth, containerHeight],
+      ])
+      .scaleExtent([1, 8])
+      .on("zoom", function zoomed(event, d) {
+        g.attr("transform", event.transform);
+      })
+  );
+
+  // Listen for slidingChange events
+  let isSliding = false;
+
+  eventEmitter.on("slidingChange", (sliderState) => {
+    isSliding = sliderState;
+    if (!isSliding) {
+      svg
+        .select(".background-title")
+        .transition()
+        .duration(1000)
+        .style("opacity", 0)
+        .remove(); // Remove the background title when not sliding
+    }
+  });
+
   return {
     updateMap(data) {
       // Create map along similar principle as above, only for a single object of the data array (corresponding to data of a single month)
@@ -99,6 +124,24 @@ export async function createChoroplethMap(container, initialData) {
         .transition()
         .duration(100)
         .attr("fill", (d) => color(valuemapForEntry.get(d.id)));
+
+      const backgroundText = svg.select(".background-title");
+      if (isSliding) {
+        const monthLabel = timeFormat("%Y-%m")(data.month);
+        if (backgroundText.empty()) {
+          svg
+            .append("text")
+            .attr("class", "background-title")
+            .attr("x", containerWidth / 2)
+            .attr("y", containerHeight / 2)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "3em")
+            .attr("fill", "#ccc")
+            .text(monthLabel);
+        } else {
+          backgroundText.text(monthLabel); // Update the text if it already exists
+        }
+      }
     },
   };
 }
