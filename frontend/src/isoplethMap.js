@@ -6,7 +6,7 @@ import {
     max,
     geoIdentity,
     scaleSequentialLog,
-    interpolateOranges,
+    interpolateRdPu,
     zoom,
     pointer,
 } from "d3";
@@ -198,7 +198,7 @@ export async function createIsoplethMap(container, initialData) {
 function drawIsolines(polygons, g, width) {
     const colorScale = scaleSequentialLog()
         .domain([min(thresholds), max(thresholds)])
-        .interpolator(interpolateOranges);
+        .interpolator(interpolateRdPu);
 
     g.selectAll('path.isopleth-band')
         .data(polygons)
