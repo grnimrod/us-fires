@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 
 public/fires.json
+public/contours_by_months.json.bk
 public/contours_by_months.json

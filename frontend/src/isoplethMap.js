@@ -317,6 +317,9 @@ async function loadAndDrawContours(width, height, gridResolutionX, gridResolutio
     console.log("%s contours calculation finish", yearMonth);
 
     // Save the computed polygons at the end
+    // if (yearMonth == "1995-1") {
+    //     saveContoursToFile();
+    // }
     // if (yearMonth == "2015-12") {
     //     saveContoursToFile();
     // }
