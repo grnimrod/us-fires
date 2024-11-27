@@ -7,6 +7,7 @@ import {
   interpolateOranges,
   lab,
   zoom,
+  timeFormat,
 } from "d3";
 import { hexbin } from "d3-hexbin";
 import * as topojson from "topojson-client";
@@ -14,7 +15,7 @@ import { setUpContainer } from "./setUpContainer.js";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
-export async function createBinnedMap(container, initialData) {
+export async function createBinnedMap(container, initialData, eventEmitter) {
   const topoJsonData = await fetch(usAtlasUrl).then((response) =>
     response.json()
   );
@@ -29,13 +30,6 @@ export async function createBinnedMap(container, initialData) {
   const path = geoPath().projection(projection);
 
   const g = svg.append("g");
-
-  //   const states = g
-  //     .selectAll("path")
-  //     .data(topojson.feature(topoJsonData, topoJsonData.objects.states).features)
-  //     .join("path")
-  //     .attr("d", path)
-  //     .attr("fill", "#e5e8e8");
 
   g.append("path")
     .attr("fill", "none")
@@ -83,7 +77,8 @@ export async function createBinnedMap(container, initialData) {
 
   const z = zoom();
 
-  svg.call(z
+  svg.call(
+    z
       .extent([
         [0, 0],
         [containerWidth, containerHeight],
@@ -95,9 +90,23 @@ export async function createBinnedMap(container, initialData) {
       })
   );
 
-  d3.select('#zoomResetBtnBin').on('click', function() {
+  let isSliding = false;
+
+  eventEmitter.on("slidingChange", (sliderState) => {
+    isSliding = sliderState;
+    if (!isSliding) {
+      svg
+        .select(".background-title")
+        .transition()
+        .duration(1000)
+        .style("opacity", 0)
+        .remove(); // Remove the background title when not sliding
+    }
+  });
+
+  d3.select("#zoomResetBtnBin").on("click", function () {
     svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
-  })
+  });
 
   return {
     updateBinnedMap(data) {
@@ -123,6 +132,24 @@ export async function createBinnedMap(container, initialData) {
         .attr("d", (d) => hexbinGenerator.hexagon())
         .attr("fill", (d) => color(d.length))
         .attr("stroke", (d) => lab(color(d.length)).darker());
+
+      const backgroundText = svg.select(".background-title");
+      if (isSliding) {
+        const monthLabel = timeFormat("%Y-%m")(data.month);
+        if (backgroundText.empty()) {
+          svg
+            .append("text")
+            .attr("class", "background-title")
+            .attr("x", containerWidth / 2)
+            .attr("y", containerHeight / 2)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "3em")
+            .attr("fill", "#ccc")
+            .text(monthLabel);
+        } else {
+          backgroundText.text(monthLabel); // Update the text if it already exists
+        }
+      }
     },
   };
 }

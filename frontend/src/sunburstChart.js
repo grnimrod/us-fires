@@ -127,9 +127,9 @@ export function createSunburstChart(container, monthlyData) {
     const y = ((d.y0 + d.y1) / 2) * radius;
 
     const offset = (lineCount - 1) * 4;
-    return `rotate(${x - 90}) translate(${y},${offset}) rotate(${
-      x < 180 ? 0 : 180
-    })`;
+    return `rotate(${x - 90}) translate(${y},${
+      x < 180 ? -offset : offset
+    }) rotate(${x < 180 ? 0 : 180})`;
   }
 
   const labels = svg // some weird behavior, on update adds new one doesn't remove existing one
