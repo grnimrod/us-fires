@@ -124,7 +124,9 @@ export async function createIsoplethMap(container, initialData) {
             .attr("selected", false)
     });
 
-    svg.call(zoom()
+    const z = zoom();
+
+    svg.call(z
         .extent([[0, 0], [containerWidth, containerHeight]])
         .scaleExtent([1, 12])
         .on("zoom", function zoomed(event, d) {
@@ -144,6 +146,13 @@ export async function createIsoplethMap(container, initialData) {
             }
             prevZoomingScale = currentZoomingScale
         }));
+
+    d3.select('#zoomResetBtn').on('click', function() {
+        svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
+
+        g.select(".county-borders")
+            .style("visibility", "hidden");
+    })
 
     // This method computes and generates all contours, and store them locally
     //     It only needs to be called once
@@ -218,7 +227,7 @@ function drawIsolines(polygons, g, width) {
         })
         .on('mousedown', function(event) {
             const influencingFires = highlightInfluencingDataPoints(event, polygons, width/gridResolutionX);
-            console.log("High influencing fires %s", influencingFires);
+            // console.log("High influencing fires %s", influencingFires);
             // Clear previous highlighted points
             g.selectAll('.highlighted-point').remove();
             // Plot the influencing points
@@ -350,7 +359,6 @@ function saveContoursToFile() {
 // Function to highlight influencing data points
 function highlightInfluencingDataPoints(event, contourPolygons, scaleFactor) {
     let [clickX, clickY] = pointer(event);
-    console.log(contourPolygons);
     const clickedBand = contourPolygons.toReversed().find(band =>
         band.coordinates.some(c => 
             d3.polygonContains(c[0], [clickX/scaleFactor, clickY/scaleFactor])
