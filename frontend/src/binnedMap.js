@@ -81,8 +81,9 @@ export async function createBinnedMap(container, initialData) {
 
   select(container).append(() => svg.node());
 
-  svg.call(
-    zoom()
+  const z = zoom();
+
+  svg.call(z
       .extent([
         [0, 0],
         [containerWidth, containerHeight],
@@ -93,6 +94,10 @@ export async function createBinnedMap(container, initialData) {
         hexGroup.attr("transform", event.transform);
       })
   );
+
+  d3.select('#zoomResetBtnBin').on('click', function() {
+    svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
+  })
 
   return {
     updateBinnedMap(data) {

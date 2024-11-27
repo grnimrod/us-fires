@@ -78,12 +78,17 @@ export async function createChoroplethMap(container, initialData) {
 
   select(container).append(() => svg.node());
 
-  svg.call(zoom()
-  .extent([[0, 0], [containerWidth, containerHeight]])
-  .scaleExtent([1, 8])
-  .on("zoom", function zoomed(event, d) {
-      g.attr("transform", event.transform);
+  const z = zoom()
+    svg.call(z
+    .extent([[0, 0], [containerWidth, containerHeight]])
+    .scaleExtent([1, 8])
+    .on("zoom", function zoomed(event, d) {
+        g.attr("transform", event.transform);
   }));
+
+  d3.select('#zoomResetBtnChoro').on('click', function() {
+    svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
+  })
   
   return {
     updateMap(data) {

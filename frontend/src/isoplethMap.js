@@ -83,7 +83,7 @@ export async function createIsoplethMap(container, initialData) {
         .attr("stroke-linejoin", "round")
         .attr("class", "county-borders")
         .attr("d", path(topojson.mesh(topoJsonData, topoJsonData.objects.counties)))
-        .style("visibility", "hidden");
+        .style("opacity", 0);
 
 
     fireDataPoints = initialData[0].children.map((fireEntry) => {
@@ -131,32 +131,33 @@ export async function createIsoplethMap(container, initialData) {
 
     const z = zoom();
 
-    svg.call(z
-        .extent([[0, 0], [containerWidth, containerHeight]])
+    svg.call(z.extent([[0, 0], [containerWidth, containerHeight]])
         .scaleExtent([1, 12])
         .on("zoom", function zoomed(event, d) {
             g.attr("transform", event.transform);
+            select('#map1 g').attr("transform", event.transform);
+            select('#map2 g').attr("transform", event.transform);
             tooltipFire.style('opacity', 0);
 
             const currentZoomingScale = event.transform.k;
             if (currentZoomingScale > 2.5 && prevZoomingScale <= 2.5)
             {
                 g.select(".county-borders")
-                    .style("visibility", "visible");
+                    .style("opacity", 1);
             }
             if (currentZoomingScale <= 2.5 && prevZoomingScale > 2.5)
             {
                 g.select(".county-borders")
-                    .style("visibility", "hidden");
+                    .style("opacity", 0);
             }
             prevZoomingScale = currentZoomingScale
         }));
 
-    d3.select('#zoomResetBtn').on('click', function() {
+    d3.select('#zoomResetBtnIso').on('click', function() {
         svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
 
         g.select(".county-borders")
-            .style("visibility", "hidden");
+            .style("opacity", 0);
     })
 
     // This method computes and generates all contours, and store them locally
