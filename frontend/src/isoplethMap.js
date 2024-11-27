@@ -222,6 +222,20 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
 
   select(container).append(() => svg.node());
 
+  let isSliding = false;
+
+  eventEmitter.on("slidingChange", (sliderState) => {
+    isSliding = sliderState;
+    if (!isSliding) {
+      svg
+        .select(".background-title")
+        .transition()
+        .duration(1000)
+        .style("opacity", 0)
+        .remove(); // Remove the background title when not sliding
+    }
+  });
+
   return {
     updateIsoplethMap(data) {
       fireDataPoints = data.children.map((fireEntry) => {
