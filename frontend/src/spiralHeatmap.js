@@ -7,7 +7,7 @@ const chartRadius = 250;
 const chartWidth = chartRadius * 2;
 const chartHeight = chartRadius * 2;
 const labelRadius = chartRadius + 5;
-const margin = { top: 0, bottom: 0, left: 0, right: 0 };
+const margin = { top: 60, bottom: 60, left: 60, right: 60 };
 const months = [
   "Jan",
   "Feb",
@@ -46,7 +46,7 @@ export function createSpiralHeatmap(container, monthlyData) {
     .getBoundingClientRect();
   const containerWidth = containerBoundingClientRect.width + 200;
   const containerHeight = containerBoundingClientRect.height + 200;
-  const radius = Math.min(containerWidth, containerHeight) / 2;
+  const radius = (Math.min(containerWidth, containerHeight) - Math.max(margin.top,margin.bottom,margin.left,margin.right)) / 2;
 
   /*let heatmap = spiralHeatmap(radius)
     .radius(radius)
@@ -165,7 +165,7 @@ function spiralHeatmap(rad) {
         .enter()
         .append("g")
         .attr("class", "arc-label")
-        .attr("font-size", `${radius * 0.01}em`);
+        .attr("font-size", `${radius * 0.007}em`);
 
       arcLabelsG
         .append("text")
