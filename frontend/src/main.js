@@ -36,8 +36,7 @@ async function init() {
   const isoplethMap = await createIsoplethMap("#map3", monthStructure);
 
   const sunburstChart = createSunburstChart("#fig4", monthlyFireCategoriesData);
-  const spiralHeatmap = createSpiralHeatmap("#fig3", monthlyFiresCount);
-  spiralHeatmap.updateHeatmap();
+  
 
   const histTimeline = createHistogram("#histogram-timeline", cleanData);
 
@@ -71,6 +70,8 @@ async function init() {
     .tickFormat((i) => timeFormat("%Y-%m")(monthIndex[i].date))
     .ticks(numTicks);
 
+  const spiralHeatmap = createSpiralHeatmap("#fig3", monthlyFiresCount, sliderRange);
+  spiralHeatmap.updateHeatmap();
   // Set up dropdown menu functionality
   const chartSelector = document.getElementById("chartSelector");
 

@@ -37,7 +37,7 @@ function convertTextToNumbers(d) {
   d.month = monthFormat(d.date);
   return d;
 }
-export function createSpiralHeatmap(container, monthlyData) {
+export function createSpiralHeatmap(container, monthlyData, slider) {
   // const { svg, containerWidth, containerHeight } = setUpContainer(container);
   //const radius = Math.min(containerWidth, containerHeight)/2;
 
@@ -110,7 +110,26 @@ export function createSpiralHeatmap(container, monthlyData) {
 
     select(container).append(() => svg.node());
   });
+  let arcsForEvents = Array.from(document.getElementsByClassName("arc"));
 
+  arcsForEvents.forEach(function(el,i) {
+          el.addEventListener("click", function(){
+            let exceptions = Array.from(new Array(24), (x, i) => i+264);
+            let ind = 0;
+            if(exceptions.includes(i)){
+              ind = exceptions.indexOf(i);
+              ind = ind * 12;
+            }
+            else{
+              if(Math.ceil(i/11) === Math.floor(i/11)){
+                ind = i + Math.ceil(i/11) + 1;
+              }else{
+                ind = i + Math.ceil(i/11);
+              }
+            }
+            slider.value(ind);
+          });
+       })
   //return heatmap;
   return {
     updateHeatmap(data) {
@@ -205,7 +224,7 @@ function spiralHeatmap(rad) {
         .attr("id", function (d, i) {
           return data[i].month;
         });
-
+        
       //array.forEach((arcs,data) => {
       //  arcs.attr('id',(data.month))
       //});
