@@ -11,6 +11,7 @@ import {
 import { hexbin } from "d3-hexbin";
 import * as topojson from "topojson-client";
 import { setUpContainer } from "./setUpContainer.js";
+import { legend } from './colorLegend';
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
@@ -98,7 +99,12 @@ export async function createBinnedMap(container, initialData) {
   d3.select('#zoomResetBtnBin').on('click', function() {
     svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
   })
-
+  let colorLegend = legend(scaleSequentialLog([1, max(initialData, (d) => d.children.length)], interpolateOranges), svg, {
+    title: "binned fire count",
+    //className: "spiralLegend",
+    //translateX: -220,
+    //translateY: -230
+  });
   return {
     updateBinnedMap(data) {
       hexGroup.selectAll("path").remove();
