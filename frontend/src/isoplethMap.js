@@ -10,7 +10,8 @@ import {
     zoom,
     pointer,
 } from "d3";
-import { contours } from 'd3-contour'
+import { contours } from 'd3-contour';
+import { legend } from './colorLegend';
 import { setUpContainer } from "./setUpContainer";
 import * as topojson from "topojson-client";
 
@@ -162,6 +163,11 @@ export async function createIsoplethMap(container, initialData) {
         .then(contours => {
             drawIsolines(contours, g, containerWidth);
         })
+
+    legend(scaleSequentialLog(thresholds, interpolateRdPu), svg, {
+        title: "Fire Influence Index",
+        tickSize: 1
+    });
 
     select(container).append(() => svg.node());
 
@@ -332,7 +338,7 @@ async function computeContours(width, height, gridResolutionX, gridResolutionY) 
             // Add contribution from each fire point, scaled by fire size and proximity
             fireDataPoints.forEach(([fx, fy, fireSize]) => {
                 const dist = Math.hypot(fx - x, fy - y);
-                const influence = Math.exp(-dist); // Fire size influence diminishes with distance
+                const influence = Math.exp(-2*dist); // Fire size influence diminishes with distance
                 value += fireSize * influence; // Higher fire size has more influence
             });
             grid.push(value);
