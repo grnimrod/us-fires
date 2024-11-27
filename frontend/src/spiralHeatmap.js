@@ -1,4 +1,5 @@
-import { select, create, scaleSequential, interpolateOranges } from "d3";
+import { select, create, scaleSequential, scaleSequentialLog, interpolateOranges } from "d3";
+import { legend } from './colorLegend';
 
 const radians = 0.0174532925;
 
@@ -7,7 +8,7 @@ const chartRadius = 250;
 const chartWidth = chartRadius * 2;
 const chartHeight = chartRadius * 2;
 const labelRadius = chartRadius + 5;
-const margin = { top: 60, bottom: 60, left: 60, right: 60 };
+const margin = { top: 160, bottom: 60, left: 60, right: 60 };
 const months = [
   "Jan",
   "Feb",
@@ -22,6 +23,7 @@ const months = [
   "Nov",
   "Dec",
 ];
+const scale =[1, 7378];
 
 //CHART OPTIONS
 const holeRadiusProportion = 0.3; //fraction of chartRadius. 0 gives you some pointy arcs in the centre.
@@ -41,6 +43,8 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
   // const { svg, containerWidth, containerHeight } = setUpContainer(container);
   //const radius = Math.min(containerWidth, containerHeight)/2;
 
+  
+
   const containerBoundingClientRect = select(container)
     .node()
     .getBoundingClientRect();
@@ -57,7 +61,7 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
     .coilLabel("year")*/
 
   const color = scaleSequential()
-    .domain([1, 7378])
+    .domain(scale)
     .interpolator(interpolateOranges);
 
   //ENSURE THE DATA IS SORTED CORRECTLY, IN THIS CASE BY YEAR AND MONTH
@@ -108,7 +112,22 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
         return color(d.count);
       });
 
-    select(container).append(() => svg.node());
+    
+
+
+    let colorLegend = legend(scaleSequential(scale, interpolateOranges), svg, {
+      title: "fire count",
+      className: "spiralLegend",
+      translateX: -220,
+      translateY: -230
+  });
+
+  let element = d3.select("#fig3").select("svg");
+  //element = d3.selectAll(".spiralLegend").attr("transform", "translate(-200,-200)");
+  console.log(element);
+
+  select(container).append(() => svg.node());
+
   });
   let arcsForEvents = Array.from(document.getElementsByClassName("arc"));
 

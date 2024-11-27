@@ -12,6 +12,9 @@ export function legend(color, svg, {
     marginLeft = 0,
     ticks = width / 64,
     tickFormat,
+    className = "color-legend",
+    translateX = 0,
+    translateY = 0,
     tickValues
   } = {}) {
   
@@ -55,6 +58,7 @@ export function legend(color, svg, {
       svg.append("image")
           .attr("x", marginLeft)
           .attr("y", marginTop)
+          .attr("transform",(translateX === 0 && translateY === 0)?"translate(0,0)" :"translate(" + translateX + ","+ (translateY -28) +")")
           .attr("width", width - marginLeft - marginRight)
           .attr("height", height - marginTop - marginBottom)
           .attr("preserveAspectRatio", "none")
@@ -122,7 +126,8 @@ export function legend(color, svg, {
     }
   
     svg.append("g")
-        .attr("transform", `translate(0,${height - marginBottom})`)
+        .attr("transform", (translateX === 0 && translateY === 0) ? `translate(0,${height - marginBottom})`: 'translate(' + translateX + ',' + translateY +')')
+        .attr("class", className)
         .call(d3.axisBottom(x)
           .ticks(ticks, typeof tickFormat === "string" ? tickFormat : undefined)
           .tickFormat(typeof tickFormat === "function" ? tickFormat : undefined)
