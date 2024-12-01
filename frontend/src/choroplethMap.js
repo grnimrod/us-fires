@@ -21,6 +21,7 @@ export async function createChoroplethMap(
   const topoJsonData = await fetch(usAtlasUrl).then((response) =>
     response.json()
   );
+  const initialStatesData = initialData[0].stateCounts;
 
   const { svg, containerWidth, containerHeight } = setUpContainer(container);
   svg.attr("preserveAspectRatio", "xMidYMid meet");
@@ -30,7 +31,7 @@ export async function createChoroplethMap(
     .domain([
       1,
       max(initialData, (monthEntry) => {
-        return max(monthEntry.states, (stateEntry) => stateEntry.count);
+        return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
       }),
     ])
     .interpolator(interpolateOranges);
@@ -44,7 +45,7 @@ export async function createChoroplethMap(
 
   // Create a map linking each state ID to its fire count by flattening `initialData` to extract state entries with counts
   const valuemapForFirstEntry = new Map(
-    initialData[0].states.map((stateEntry) => [
+    initialStatesData.map((stateEntry) => [
       namemap.get(stateEntry.state),
       stateEntry.count,
     ])
@@ -96,6 +97,10 @@ export async function createChoroplethMap(
       })
   );
 
+  select("#zoomResetBtnChoro").on("click", function () {
+    svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
+  });
+
   // Listen for slidingChange events
   let isSliding = false;
 
@@ -111,15 +116,12 @@ export async function createChoroplethMap(
     }
   });
 
-  d3.select("#zoomResetBtnChoro").on("click", function () {
-    svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
-  });
-
   return {
-    updateMap(data) {
+    updateMap(newData) {
+      const newStatesData = newData.stateCounts;
       // Create map along similar principle as above, only for a single object of the data array (corresponding to data of a single month)
       const valuemapForEntry = new Map(
-        data.states.map((stateEntry) => [
+        newStatesData.map((stateEntry) => [
           namemap.get(stateEntry.state),
           stateEntry.count,
         ])
@@ -132,7 +134,7 @@ export async function createChoroplethMap(
 
       const backgroundText = svg.select(".background-title");
       if (isSliding) {
-        const monthLabel = timeFormat("%Y-%m")(data.month);
+        const monthLabel = timeFormat("%Y-%m")(newData.month);
         if (backgroundText.empty()) {
           svg
             .append("text")

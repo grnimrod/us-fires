@@ -1,5 +1,13 @@
-import { select, create, scaleSequential, scaleSequentialLog, max, min, interpolateOranges } from "d3";
-import { legend } from './colorLegend';
+import {
+  select,
+  create,
+  scaleSequential,
+  scaleSequentialLog,
+  max,
+  min,
+  interpolateOranges,
+} from "d3";
+import { legend } from "./colorLegend";
 
 const radians = 0.0174532925;
 
@@ -24,7 +32,6 @@ const months = [
   "Dec",
 ];
 
-
 //CHART OPTIONS
 const holeRadiusProportion = 0.3; //fraction of chartRadius. 0 gives you some pointy arcs in the centre.
 const holeRadius = holeRadiusProportion * chartRadius;
@@ -40,17 +47,20 @@ function convertTextToNumbers(d) {
   return d;
 }
 export function createSpiralHeatmap(container, monthlyData, slider) {
-  // const { svg, containerWidth, containerHeight } = setUpContainer(container);
-  //const radius = Math.min(containerWidth, containerHeight)/2;
-  const scale =[1, max(monthlyData, (monthEntry) => monthEntry.count)];
-  
+  const scale = [
+    1,
+    max(monthlyData, (monthEntry) => monthEntry.totalFireCount),
+  ];
 
   const containerBoundingClientRect = select(container)
     .node()
     .getBoundingClientRect();
   const containerWidth = containerBoundingClientRect.width + 200;
   const containerHeight = containerBoundingClientRect.height + 200;
-  const radius = (Math.min(containerWidth, containerHeight) - Math.max(margin.top,margin.bottom,margin.left,margin.right)) / 2;
+  const radius =
+    (Math.min(containerWidth, containerHeight) -
+      Math.max(margin.top, margin.bottom, margin.left, margin.right)) /
+    2;
 
   /*let heatmap = spiralHeatmap(radius)
     .radius(radius)
@@ -109,44 +119,40 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
     g.selectAll(".arc")
       .selectAll("path")
       .style("fill", function (d) {
-        return color(d.count);
+        return color(d.totalFireCount);
       });
-
-    
-
 
     let colorLegend = legend(scaleSequential(scale, interpolateOranges), svg, {
       title: "fire count",
       className: "spiralLegend",
       translateX: -220,
-      translateY: -230
+      translateY: -230,
+    });
+
+    let element = d3.select("#fig3").select("svg");
+
+    select(container).append(() => svg.node());
   });
 
-  let element = d3.select("#fig3").select("svg");
-
-  select(container).append(() => svg.node());
-
-  });
   let arcsForEvents = Array.from(document.getElementsByClassName("arc"));
 
-  arcsForEvents.forEach(function(el,i) {
-          el.addEventListener("click", function(){
-            let exceptions = Array.from(new Array(24), (x, i) => i+264);
-            let ind = 0;
-            if(exceptions.includes(i)){
-              ind = exceptions.indexOf(i);
-              ind = ind * 12;
-            }
-            else{
-              if(Math.ceil(i/11) === Math.floor(i/11)){
-                ind = i + Math.ceil(i/11) + 1;
-              }else{
-                ind = i + Math.ceil(i/11);
-              }
-            }
-            slider.value(ind);
-          });
-       })
+  arcsForEvents.forEach(function (el, i) {
+    el.addEventListener("click", function () {
+      let exceptions = Array.from(new Array(24), (x, i) => i + 264);
+      let ind = 0;
+      if (exceptions.includes(i)) {
+        ind = exceptions.indexOf(i);
+        ind = ind * 12;
+      } else {
+        if (Math.ceil(i / 11) === Math.floor(i / 11)) {
+          ind = i + Math.ceil(i / 11) + 1;
+        } else {
+          ind = i + Math.ceil(i / 11);
+        }
+      }
+      slider.value(ind);
+    });
+  });
   //return heatmap;
   return {
     updateHeatmap(data) {
@@ -241,7 +247,7 @@ function spiralHeatmap(rad) {
         .attr("id", function (d, i) {
           return data[i].month;
         });
-        
+
       //array.forEach((arcs,data) => {
       //  arcs.attr('id',(data.month))
       //});

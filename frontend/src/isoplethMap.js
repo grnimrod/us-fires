@@ -75,8 +75,11 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
   const topoJsonData = await fetch(usAtlasUrl).then((response) =>
     response.json()
   );
+  const initialMonthlyStructure = initialData[0].monthlyStructure;
+
   const { svg, containerWidth, containerHeight } = setUpContainer(container);
   svg.attr("preserveAspectRatio", "xMidYMid meet");
+
   const projection = geoAlbersUsa().fitSize(
     [containerWidth, containerHeight],
     topojson.feature(topoJsonData, topoJsonData.objects.states)
@@ -102,7 +105,7 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
     .attr("d", path(topojson.mesh(topoJsonData, topoJsonData.objects.counties)))
     .style("opacity", 0);
 
-  fireDataPoints = initialData[0].children.map((fireEntry) => {
+  fireDataPoints = initialMonthlyStructure.children.map((fireEntry) => {
     const [x, y] = projection([fireEntry.LONGITUDE, fireEntry.LATITUDE]);
     return [
       x,
@@ -237,8 +240,8 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
   });
 
   return {
-    updateIsoplethMap(data) {
-      fireDataPoints = data.children.map((fireEntry) => {
+    updateIsoplethMap(newData) {
+      fireDataPoints = newData.monthlyStructure.children.map((fireEntry) => {
         const [x, y] = projection([fireEntry.LONGITUDE, fireEntry.LATITUDE]);
         return [
           x,
@@ -267,7 +270,7 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
       g.selectAll(".highlighted-point").remove();
 
       const yearMonth =
-        data.month.getFullYear() + "-" + (data.month.getMonth() + 1);
+        newData.month.getFullYear() + "-" + (newData.month.getMonth() + 1);
 
       loadAndDrawContours(
         containerWidth,
@@ -281,7 +284,7 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
 
       const backgroundText = svg.select(".background-title");
       if (isSliding) {
-        const monthLabel = timeFormat("%Y-%m")(data.month);
+        const monthLabel = timeFormat("%Y-%m")(newData.month);
         if (backgroundText.empty()) {
           svg
             .append("text")

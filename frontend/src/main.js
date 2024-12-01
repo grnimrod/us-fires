@@ -9,10 +9,7 @@ import { createSpiralHeatmap } from "./spiralHeatmap.js";
 import {
   fetchFiresData,
   cleanFiresData,
-  structureByMonth,
-  countMonthlyFiresPerState,
-  createMonthlyHierarchy,
-  countFiresPerMonth,
+  prepareUnifiedMonthlyData,
 } from "./prepareFiresData.js";
 
 class EventEmitter {
@@ -35,12 +32,72 @@ class EventEmitter {
 }
 
 async function init() {
-  const firesData = await fetchFiresData();
-  const cleanData = cleanFiresData(firesData);
-  const monthStructure = structureByMonth(cleanData);
-  const monthlyFiresPerState = countMonthlyFiresPerState(cleanData);
-  const monthlyFiresCount = countFiresPerMonth(cleanData);
-  const monthlyFireCategoriesData = createMonthlyHierarchy(cleanData);
+  const rawData = await fetchFiresData();
+  const cleanData = cleanFiresData(rawData);
+  const firesData = prepareUnifiedMonthlyData(cleanData);
+
+  const dashboardState = {
+    sliderIndex: 0,
+    filterCategory: null,
+    data: {
+      fullData: [],
+      filteredData: null,
+    },
+    applyFilter(selectedCategory) {
+      if (!selectedCategory) {
+        this.data.filteredData = null; // Clear filter
+        return;
+      }
+
+      // Apply filtering logic to fullData
+      this.data.filteredData = this.data.fullData.map((monthData) => {
+        // Filter children based on the selectedCategory
+        const filteredChildren = monthData.monthlyStructure.children.filter(
+          (fire) =>
+            fire.CAUSE_CATEGORY === selectedCategory ||
+            fire.STAT_CAUSE_DESCR === selectedCategory
+        );
+
+        // Recalculate state counts based on filtered children
+        const filteredStateCounts = monthData.stateCounts.map((state) => {
+          const filteredStateCount = filteredChildren.filter(
+            (fire) => fire.STATE_NAME === state.state
+          ).length;
+
+          return {
+            state: state.state,
+            count: filteredStateCount,
+          };
+        });
+
+        // Return a new monthData object with updated attributes
+        return {
+          ...monthData,
+          monthlyStructure: {
+            ...monthData.monthlyStructure,
+            children: filteredChildren, // Replace children with filtered children
+          },
+          stateCounts: filteredStateCounts, // Update state counts
+          totalFireCount: filteredChildren.length, // Update total fire count
+        };
+      });
+    },
+    getActiveFullData() {
+      if (this.filterCategory) {
+        return this.data.filteredData;
+      }
+      return this.data.fullData;
+    },
+    getActiveMonthData() {
+      if (this.filterCategory) {
+        return this.data.filteredData[this.sliderIndex];
+      }
+      return this.data.fullData[this.sliderIndex];
+    },
+  };
+
+  dashboardState.data.fullData = firesData;
+  const activeData = dashboardState.getActiveFullData();
 
   let currentChart = "binnedMap";
 
@@ -50,42 +107,47 @@ async function init() {
   const eventEmitter = new EventEmitter();
   let isSliding = false;
 
-  const binnedMap = await createBinnedMap(
-    "#map1",
-    monthStructure,
-    eventEmitter
-  );
+  const binnedMap = await createBinnedMap("#map1", firesData, eventEmitter);
   const choroplethMap = await createChoroplethMap(
     "#map2",
-    monthlyFiresPerState,
+    firesData,
     eventEmitter
   );
-  const isoplethMap = await createIsoplethMap(
-    "#map3",
-    monthStructure,
-    eventEmitter
-  );
+  const isoplethMap = await createIsoplethMap("#map3", firesData, eventEmitter);
 
-  const sunburstChart = createSunburstChart("#fig4", monthlyFireCategoriesData);
-  
+  const sunburstChart = createSunburstChart("#fig4", firesData, eventEmitter);
 
-  const histTimeline = createHistogram("#histogram-timeline", cleanData);
+  eventEmitter.on("categorySelected", (selectedCategory) => {
+    dashboardState.filterCategory = selectedCategory;
+    dashboardState.applyFilter(selectedCategory);
+    updateCharts();
+  });
 
-  // We use these to set up slider with custom steps
-  // They are based on the data of the choropleth map, but all data will follow the same structure of
-  // being grouped by year-month, as it's necessary for the custom steps of the slider (index-based)
-  const months = monthlyFiresPerState.map((d) => d.month);
-  const monthIndex = months.map((date, index) => ({
-    index,
-    date,
-  }));
+  eventEmitter.on("resetData", () => {
+    dashboardState.filterCategory = null;
+    updateCharts();
+  });
+
+  function updateCharts() {
+    const activeFullData = dashboardState.getActiveFullData();
+    const activeMonthData = dashboardState.getActiveMonthData();
+
+    histTimeline.updateHistFilteredData(activeFullData);
+    binnedMap.updateBinnedMap(activeMonthData);
+    choroplethMap.updateMap(activeMonthData);
+    sunburstChart.updateSunburst(activeMonthData);
+    // TODO: isoplethMap.updateIsoplethMap(activeMonthData);
+    // TODO: spiralHeatmap.updateHeatmap(activeFullData);
+  }
+
+  const histTimeline = createHistogram("#histogram-timeline", firesData);
 
   // Create slider and set up interactions
   const sliderDiv = select("#slider");
   const sliderDivWidth = sliderDiv.node().getBoundingClientRect().width;
 
   const numTicks = 6;
-  const tickInterval = Math.floor((monthIndex.length - 1) / (numTicks - 1));
+  const tickInterval = Math.floor((firesData.length - 1) / (numTicks - 1));
 
   const tickValues = Array.from(
     { length: numTicks },
@@ -94,14 +156,14 @@ async function init() {
 
   const sliderRange = sliderBottom()
     .min(0)
-    .max(monthIndex.length - 1)
+    .max(firesData.length - 1)
     .step(1)
     .width(sliderDivWidth - 96.028)
     .tickValues(tickValues)
-    .tickFormat((i) => timeFormat("%Y-%m")(monthIndex[i].date))
+    .tickFormat((i) => timeFormat("%Y-%m")(firesData[i].month))
     .ticks(numTicks);
 
-  const spiralHeatmap = createSpiralHeatmap("#fig3", monthlyFiresCount, sliderRange);
+  const spiralHeatmap = createSpiralHeatmap("#fig3", firesData, sliderRange);
   spiralHeatmap.updateHeatmap();
   // Set up dropdown menu functionality
   const chartSelector = document.getElementById("chartSelector");
@@ -129,8 +191,7 @@ async function init() {
     }
   });
 
-  // Set up play button functionality
-
+  // Set up play/pause button functionality
   let timer;
 
   const playButton = select("#play-button");
@@ -155,7 +216,7 @@ async function init() {
   function update() {
     const offset = sliderRange.value() + 1;
 
-    if (offset >= months.length) {
+    if (offset >= firesData.length) {
       resetTimer();
       playButton.text("Restart");
     } else {
@@ -180,15 +241,19 @@ async function init() {
   });
 
   sliderRange.on("onchange", (val) => {
-    spiralHeatmap.updateHeatmap(monthlyFiresCount[val]);
-    binnedMap.updateBinnedMap(monthStructure[val]);
-    choroplethMap.updateMap(monthlyFiresPerState[val]);
-    sunburstChart.updateSunburst(monthlyFireCategoriesData[val]);
-    // This is for performance concern. Simultaneouly updating the invisible isopleth map will block the main thread
-    // TODO: Remove this if condition when performance optmization is done
-    if (document.querySelector("#map3").style.visibility != "hidden") {
-      isoplethMap.updateIsoplethMap(monthStructure[val]);
-    }
+    dashboardState.sliderIndex = val;
+
+    updateCharts();
+
+    // spiralHeatmap.updateHeatmap(firesData[val]);
+    // binnedMap.updateBinnedMap(firesData[val]);
+    // choroplethMap.updateMap(firesData[val]);
+    // sunburstChart.updateSunburst(firesData[val]);
+    // // This is for performance concern. Simultaneouly updating the invisible isopleth map will block the main thread
+    // // TODO: Remove this if condition when performance optmization is done
+    // if (document.querySelector("#map3").style.visibility != "hidden") {
+    //   isoplethMap.updateIsoplethMap(firesData[val]);
+    // }
   });
 
   const gRange = sliderDiv

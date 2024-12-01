@@ -22,6 +22,65 @@ export function cleanFiresData(data) {
   return validProjectedFires;
 }
 
+export function prepareUnifiedMonthlyData(data) {
+  // Get all distinct states for consistent state-based counts
+  const allStates = Array.from(new Set(data.map((d) => d.STATE_NAME)));
+
+  // Group data by year-month
+  const monthMap = data.reduce((acc, observation) => {
+    const monthKey = new Date(
+      observation.DISCOVERY_DATE.getFullYear(),
+      observation.DISCOVERY_DATE.getMonth()
+    ).toISOString();
+
+    if (!acc[monthKey]) {
+      acc[monthKey] = {
+        month: new Date(monthKey),
+        totalFireCount: 0,
+        stateCounts: allStates.map((state) => ({ state, count: 0 })),
+        categories: { name: "root", children: [] },
+        monthlyStructure: { month: new Date(monthKey), children: [] },
+      };
+    }
+
+    const monthData = acc[monthKey];
+    monthData.totalFireCount++;
+    monthData.monthlyStructure.children.push(observation);
+
+    // Update state-based counts
+    const stateEntry = monthData.stateCounts.find(
+      (entry) => entry.state === observation.STATE_NAME
+    );
+    if (stateEntry) {
+      stateEntry.count++;
+    }
+
+    // Build sunburst hierarchy
+    let causeCategory = monthData.categories.children.find(
+      (child) => child.name === observation.CAUSE_CATEGORY
+    );
+    if (!causeCategory) {
+      causeCategory = { name: observation.CAUSE_CATEGORY, children: [] };
+      monthData.categories.children.push(causeCategory);
+    }
+
+    let causeDescription = causeCategory.children.find(
+      (child) => child.name === observation.STAT_CAUSE_DESCR
+    );
+    if (!causeDescription) {
+      causeDescription = { name: observation.STAT_CAUSE_DESCR, count: 0 };
+      causeCategory.children.push(causeDescription);
+    }
+
+    causeDescription.count++;
+
+    return acc;
+  }, {});
+
+  // Convert monthMap to sorted array
+  return Object.values(monthMap).sort((a, b) => a.month - b.month);
+}
+
 export function countFiresPerDay(data) {
   return Array.from(
     rollups(
@@ -87,11 +146,12 @@ export function countMonthlyFiresPerState(data) {
 }
 
 export function countFiresPerMonth(data) {
-  const monthlyFiresCount =Array.from(
+  const monthlyFiresCount = Array.from(
     rollups(
       data,
       (v) => v.length,
-      (d) => new Date(d.DISCOVERY_DATE.getFullYear(), d.DISCOVERY_DATE.getMonth()),
+      (d) =>
+        new Date(d.DISCOVERY_DATE.getFullYear(), d.DISCOVERY_DATE.getMonth())
     ),
     ([key, values]) => ({
       month: key,

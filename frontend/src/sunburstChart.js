@@ -9,8 +9,8 @@ import {
   timeFormat,
 } from "d3";
 
-export function createSunburstChart(container, monthlyData) {
-  const firstEntryCategories = monthlyData[0].categories;
+export function createSunburstChart(container, initialData, eventEmitter) {
+  const firstEntryCategories = initialData[0].categories;
 
   const containerBoundingClientRect = select(container)
     .node()
@@ -53,12 +53,20 @@ export function createSunburstChart(container, monthlyData) {
     .style("width", "100%")
     .style("height", "100%");
 
+  const listeningRect = svg
+    .append("rect")
+    .attr("width", containerWidth)
+    .attr("height", containerHeight)
+    .attr("fill", "none")
+    .attr("pointer-events", "all");
+
+  // Chart title current month
   svg
     .append("text")
     .attr("x", containerWidth / 2 - 3 * radius)
     .attr("y", margin.top / 2)
     .attr("font-size", "20px")
-    .text(`${timeFormat("%Y-%m")(monthlyData[0].month)}`);
+    .text(`${timeFormat("%Y-%m")(initialData[0].month)}`);
 
   const arcs = svg
     .append("g")
@@ -87,6 +95,22 @@ export function createSunburstChart(container, monthlyData) {
         .join(": ")}\nNumber of fires: ${d.value}`
   );
 
+  function clicked(event, d) {
+    arcs.attr("fill-opacity", (slice) => {
+      return slice.data.name == d.data.name ? 0.9 : 0.3;
+    });
+
+    eventEmitter.emit("categorySelected", d.data.name);
+  }
+
+  arcs.style("cursor", "pointer").on("click", clicked);
+
+  listeningRect.on("click", function () {
+    arcs.attr("fill-opacity", 0.9);
+    eventEmitter.emit("resetData");
+  });
+
+  // Add fire count title to middle of the chart
   svg
     .append("text")
     .attr(
@@ -160,11 +184,11 @@ export function createSunburstChart(container, monthlyData) {
   select(container).append(() => svg.node());
 
   return {
-    updateSunburst(data) {
+    updateSunburst(newData) {
       svg.selectAll("text").remove();
       svg.selectAll("title").remove();
 
-      const currentEntryCategories = data.categories;
+      const currentEntryCategories = newData.categories;
       const newRoot = hierarchy(currentEntryCategories)
         .sum((d) => d.count)
         .sort((a, b) => b.value - a.value);
@@ -176,7 +200,7 @@ export function createSunburstChart(container, monthlyData) {
         .attr("x", containerWidth / 2 - 3 * radius)
         .attr("y", margin.top / 2)
         .attr("font-size", "20px")
-        .text(`${timeFormat("%Y-%m")(data.month)}`);
+        .text(`${timeFormat("%Y-%m")(newData.month)}`);
 
       const newArcs = svg
         .select("g")
@@ -205,6 +229,8 @@ export function createSunburstChart(container, monthlyData) {
             .slice(1)
             .join(": ")}\nNumber of fires: ${d.value}`
       );
+
+      newArcs.style("cursor", "pointer").on("click", clicked);
 
       svg
         .append("text")

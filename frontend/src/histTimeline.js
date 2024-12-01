@@ -1,10 +1,10 @@
-import { create, bin, scaleLinear, max, select } from "d3";
+import { create, bin, scaleBand, scaleLinear, max, select } from "d3";
 import { setUpContainer } from "./setUpContainer";
 
 export function createHistogram(container, data) {
   const { containerWidth } = setUpContainer(container);
 
-  const height = 70;
+  const height = 100;
   const margin = {
     top: 20,
     right: 20,
@@ -16,47 +16,39 @@ export function createHistogram(container, data) {
     .attr("width", containerWidth)
     .attr("height", height);
 
-  const distinctDates = Array.from(
-    new Set(
-      data.map((d) => {
-        const year = d.DISCOVERY_DATE.getFullYear();
-        const month = d.DISCOVERY_DATE.getMonth();
-        return `${year}-${month}`; // Create a string representing year and month
-      })
-    )
-  );
-
-  const numBins = Math.ceil(distinctDates.length / 4);
-
-  const binGenerator = bin()
-    .thresholds(numBins)
-    .value(
-      (d) =>
-        new Date(d.DISCOVERY_DATE.getFullYear(), d.DISCOVERY_DATE.getMonth())
-    );
-
-  const bins = binGenerator(data);
-
-  const xScale = scaleLinear()
-    .domain([bins[0].x0, bins[bins.length - 1].x1])
+  const xScale = scaleBand()
+    .domain(data.map((d) => d.month))
     .range([margin.left, containerWidth - margin.right]);
 
   const yScale = scaleLinear()
-    .domain([0, max(bins, (d) => d.length)])
+    .domain([0, max(data, (d) => d.totalFireCount)])
     .range([height, 0]);
 
   svg
     .append("g")
-    // .attr("transform", `translate(0, 130)`)
     .selectAll()
-    .data(bins)
+    .data(data)
     .join("rect")
-    .attr("x", (d) => xScale(d.x0) + 1)
-    .attr("y", (d) => yScale(d.length))
-    .attr("width", (d) => xScale(d.x1) - xScale(d.x0) - 1)
-    .attr("height", (d) => height - yScale(d.length))
+    .attr("x", (d) => xScale(d.month))
+    .attr("y", (d) => yScale(d.totalFireCount))
+    .attr("width", xScale.bandwidth())
+    .attr("height", (d) => height - yScale(d.totalFireCount))
     .attr("fill", "#dc7633")
     .attr("opacity", 0.8);
 
   select(container).append(() => svg.node());
+
+  function updateHistFilteredData(filteredData) {
+    svg
+      .selectAll("rect")
+      .data(filteredData)
+      .join("rect")
+      .transition()
+      .duration(200)
+      .attr("x", (d) => xScale(d.month))
+      .attr("y", (d) => yScale(d.totalFireCount))
+      .attr("height", (d) => height - yScale(d.totalFireCount));
+  }
+
+  return { updateHistFilteredData };
 }

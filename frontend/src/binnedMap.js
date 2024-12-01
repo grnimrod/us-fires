@@ -20,6 +20,7 @@ export async function createBinnedMap(container, initialData, eventEmitter) {
   const topoJsonData = await fetch(usAtlasUrl).then((response) =>
     response.json()
   );
+  const initialMonthlyStructure = initialData[0].monthlyStructure;
 
   const { svg, containerWidth, containerHeight } = setUpContainer(container);
   svg.attr("preserveAspectRatio", "xMidYMid meet");
@@ -41,7 +42,7 @@ export async function createBinnedMap(container, initialData, eventEmitter) {
     .attr("d", path(topojson.mesh(topoJsonData, topoJsonData.objects.states)));
 
   const color = scaleSequentialLog()
-    .domain([1, max(initialData, (d) => d.children.length)])
+    .domain([1, max(initialData, (d) => d.totalFireCount)])
     .interpolator(interpolateOranges);
 
   const hexbinGenerator = hexbin()
@@ -50,7 +51,7 @@ export async function createBinnedMap(container, initialData, eventEmitter) {
     .x((d) => d[0])
     .y((d) => d[1]);
 
-  const fireDataPoints = initialData[0].children
+  const fireDataPoints = initialMonthlyStructure.children
     .filter((d) => {
       const projected = projection([d.LONGITUDE, d.LATITUDE]);
       return projected !== null;
@@ -91,6 +92,10 @@ export async function createBinnedMap(container, initialData, eventEmitter) {
       })
   );
 
+  select("#zoomResetBtnBin").on("click", function () {
+    svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
+  });
+
   let isSliding = false;
 
   eventEmitter.on("slidingChange", (sliderState) => {
@@ -105,12 +110,9 @@ export async function createBinnedMap(container, initialData, eventEmitter) {
     }
   });
 
-  d3.select("#zoomResetBtnBin").on("click", function () {
-    svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
-  });
   let colorLegend = legend(
     scaleSequentialLog(
-      [1, max(initialData, (d) => d.children.length)],
+      [1, max(initialData, (d) => d.totalFireCount)],
       interpolateOranges
     ),
     svg,
@@ -121,11 +123,12 @@ export async function createBinnedMap(container, initialData, eventEmitter) {
       //translateY: -230
     }
   );
+
   return {
-    updateBinnedMap(data) {
+    updateBinnedMap(newData) {
       hexGroup.selectAll("path").remove();
 
-      const fireDataPoints = data.children
+      const fireDataPoints = newData.monthlyStructure.children
         .filter((d) => {
           const projected = projection([d.LONGITUDE, d.LATITUDE]);
           return projected !== null;
@@ -148,7 +151,7 @@ export async function createBinnedMap(container, initialData, eventEmitter) {
 
       const backgroundText = svg.select(".background-title");
       if (isSliding) {
-        const monthLabel = timeFormat("%Y-%m")(data.month);
+        const monthLabel = timeFormat("%Y-%m")(newData.month);
         if (backgroundText.empty()) {
           svg
             .append("text")
