@@ -32,13 +32,26 @@ export function createSunburstChart(container, initialData, eventEmitter) {
   // Find root, define that value of broader categories is sum of the value of its children, sort in descending order
   const root = hierarchy(firstEntryCategories)
     .sum((d) => d.count)
-    .sort((a, b) => b.value - a.value);
+    .sort((a, b) => a.data.name.localeCompare(b.data.name));
 
   // Create partitioning function
   const partitionSunburst = partition().size([2 * Math.PI, root.height + 1]);
 
   partitionSunburst(root);
-  root.each((d) => (d.current = d));
+
+  root.each((d) => {
+    d.current = d;
+  });
+
+  const currentNodeMap = new Map();
+  root.each((node) => {
+    currentNodeMap.set(node.data.name, {
+      x0: node.current?.x0 || node.x0,
+      x1: node.current?.x1 || node.x1,
+      y0: node.current?.y0 || node.y0,
+      y1: node.current?.y1 || node.y1,
+    });
+  });
 
   const arcGenerator = arc()
     .startAngle((d) => d.x0)
@@ -81,7 +94,7 @@ export function createSunburstChart(container, initialData, eventEmitter) {
       while (d.depth > 1) d = d.parent;
       return color(d.data.name);
     })
-    .attr("fill-opacity", 0.9)
+    // .attr("fill-opacity", 0.9)
     .attr("pointer-events", "auto")
     .attr("d", (d) => arcGenerator(d.current));
 
@@ -191,9 +204,38 @@ export function createSunburstChart(container, initialData, eventEmitter) {
       const currentEntryCategories = newData.categories;
       const newRoot = hierarchy(currentEntryCategories)
         .sum((d) => d.count)
-        .sort((a, b) => b.value - a.value);
+        .sort((a, b) => a.data.name.localeCompare(b.data.name));
       partitionSunburst(newRoot);
       newRoot.each((d) => (d.current = d));
+
+      newRoot.each((node) => {
+        const current = currentNodeMap.get(node.data.name);
+        if (current) {
+          // Initialize with the current values from the previous root
+          node.current = {
+            x0: current.x0,
+            x1: current.x1,
+            y0: current.y0,
+            y1: current.y1,
+          };
+        } else {
+          // Initialize with the new target values for new nodes
+          node.current = {
+            x0: node.x0,
+            x1: node.x1,
+            y0: node.y0,
+            y1: node.y1,
+          };
+        }
+
+        // Always set the target values
+        node.target = {
+          x0: node.x0,
+          x1: node.x1,
+          y0: node.y0,
+          y1: node.y1,
+        };
+      });
 
       svg
         .append("text")
@@ -211,14 +253,53 @@ export function createSunburstChart(container, initialData, eventEmitter) {
           })`
         )
         .selectAll("path")
-        .data(newRoot.descendants().slice(1))
+        .data(newRoot.descendants().slice(1), (d) => d.data.name)
         .join("path")
         .attr("d", (d) => arcGenerator(d.current))
         .attr("fill", (d) => {
           while (d.depth > 1) d = d.parent;
           return color(d.data.name);
+        });
+      // .attr("fill-opacity", 0.9);
+
+      const t = svg.transition().duration(150);
+      newArcs
+        .transition(t)
+        .tween("data", (d) => {
+          // Interpolators for each attribute
+          const iX0 = d3.interpolate(d.current.x0, d.target.x0);
+          const iX1 = d3.interpolate(d.current.x1, d.target.x1);
+          const iY0 = d3.interpolate(d.current.y0, d.target.y0);
+          const iY1 = d3.interpolate(d.current.y1, d.target.y1);
+
+          return (t) => {
+            d.current = {
+              x0: iX0(t),
+              x1: iX1(t),
+              y0: iY0(t),
+              y1: iY1(t),
+            };
+          };
         })
-        .attr("fill-opacity", 0.9);
+        .attrTween("d", (d) => () => arcGenerator(d.current))
+        .on("end", () => {
+          // After the transition, set current to target
+          newRoot.each((node) => {
+            node.current = {
+              x0: node.target.x0,
+              x1: node.target.x1,
+              y0: node.target.y0,
+              y1: node.target.y1,
+            };
+
+            currentNodeMap.set(node.data.name, {
+              x0: node.current?.x0 || node.x0,
+              x1: node.current?.x1 || node.x1,
+              y0: node.current?.y0 || node.y0,
+              y1: node.current?.y1 || node.y1,
+            });
+          });
+        });
 
       newArcs.append("title").text(
         (d) =>
@@ -264,10 +345,23 @@ export function createSunburstChart(container, initialData, eventEmitter) {
 
       newLabels
         .join("text")
-        .attr("fill-opacity", (d) => +labelVisible(d.current))
-        .attr("transform", function (d) {
-          const lineCount = d.data.name.split(/\s|\/|\\n/).length;
-          return labelTransform(d.current, lineCount);
+        .transition(t)
+        .attrTween("fill-opacity", (d) => {
+          return (t) => {
+            return +labelVisible(d.current);
+          };
+        })
+        .attrTween("transform", function (d) {
+          const iTransform = d3.interpolate(
+            [d.current.x0, d.current.y0],
+            [d.current.x1, d.current.y1]
+          );
+
+          return (t) => {
+            const [newX, newY] = iTransform(t);
+            const lineCount = d.data.name.split(/\s|\/|\\n/).length;
+            return labelTransform(d.current, lineCount, newX, newY);
+          };
         })
         .each(function (d) {
           const textElement = select(this);
