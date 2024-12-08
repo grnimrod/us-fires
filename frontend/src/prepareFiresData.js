@@ -11,7 +11,10 @@ export function cleanFiresData(data) {
   const parseDate = timeParse("%Y-%m-%d %H:%M:%S");
 
   const validProjectedFires = data.filter(
-    (d) => d.LONGITUDE !== undefined && d.LATITUDE !== undefined
+    (d) => 
+    d.LONGITUDE !== undefined && 
+    d.LATITUDE !== undefined &&
+    d.STATE_NAME
   );
 
   validProjectedFires.forEach((d) => {
@@ -25,9 +28,11 @@ export function cleanFiresData(data) {
 export function prepareUnifiedMonthlyData(data) {
   // Get all distinct states for consistent state-based counts
   const allStates = Array.from(new Set(data.map((d) => d.STATE_NAME)));
+  console.log("All States:", allStates);
 
   // Group data by year-month
   const monthMap = data.reduce((acc, observation) => {
+   
     const monthKey = new Date(
       observation.DISCOVERY_DATE.getFullYear(),
       observation.DISCOVERY_DATE.getMonth()
@@ -53,6 +58,8 @@ export function prepareUnifiedMonthlyData(data) {
     );
     if (stateEntry) {
       stateEntry.count++;
+    } else {
+      console.error("State not found in stateCounts:", observation.STATE_NAME);
     }
 
     // Build sunburst hierarchy
@@ -115,8 +122,8 @@ export function structureByMonth(data) {
 }
 
 export function countMonthlyFiresPerState(data) {
-  const allStates = Array.from(new Set(data.map((d) => d.STATE_NAME)));
-
+  const allStates = Array.from(new Set(data.map((d) => d.STATE_NAME))).filter(Boolean);
+ 
   const monthlyFiresPerState = Array.from(
     rollups(
       data,

@@ -57,15 +57,39 @@ export async function createChoroplethMap(
   );
   const path = geoPath().projection(projection);
 
+  const listeningRect = svg
+    .append("rect")
+    .attr("width", containerWidth)
+    .attr("height", containerHeight)
+    .attr("fill", "none")
+    .attr("pointer-events", "all");  
+
   const g = svg.append("g");
+
+  const statesData = topojson.feature(topoJsonData, topoJsonData.objects.states);
+
+  //const selectedStatesSet = new Set();
 
   const states = g
     .selectAll("path")
-    .data(topojson.feature(topoJsonData, topoJsonData.objects.states).features)
+    .data(statesData.features)
     .join("path")
     .attr("d", path)
     .attr("fill", (d) => color(valuemapForFirstEntry.get(d.id)));
 
+ 
+  states.on("click", function(event, d) {
+      const selectedState = d.properties.name; 
+      eventEmitter.emit("stateSelected", selectedState);
+    });
+
+  listeningRect.on("click", function () {
+    //selectedStatesSet.clear();
+    eventEmitter.emit("resetData");
+    states.attr("opacity", 1).attr("stroke", "none"); // Reset state styles
+  });
+
+  // Draw state borders
   g.append("path")
     .attr("fill", "none")
     .attr("stroke", "white")

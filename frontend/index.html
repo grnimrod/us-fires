@@ -6,15 +6,20 @@
     <script src="https://d3js.org/d3.v4.min.js"></script>
   </head>
   <body>
-    <div id="dropdown-container">
-      <select id="chartSelector">
-        <option value="binnedMap">Binned Map</option>
-        <option value="choroplethMap">Choropleth Map</option>
-        <option value="isoplethMap">Isopleth Map</option>
-      </select>
-    </div>
-
     <div class="dashboard-container">
+
+      <div id="dropdown-container">
+        <select id="chartSelector">
+          <option value="binnedMap">Binned Map</option>
+          <option value="choroplethMap">Choropleth Map</option>
+          <option value="isoplethMap">Isopleth Map</option>
+        </select>
+      </div>
+
+      <div class="Title">
+        <h1>US Wildfires</h1>
+      </div>
+
       <div class="map-parent">
         <div id="map1" class="map-container">
           <button id="zoomResetBtnBin">Reset Zooming</button>
@@ -23,17 +28,22 @@
           <button id="zoomResetBtnChoro">Reset Zooming</button>
         </div>
         <div id="map3" class="map-container">
-            <button id="zoomResetBtnIso">Reset Zooming</button>
+          <button id="zoomResetBtnIso">Reset Zooming</button>
         </div>
       </div>
-      <div class="figure" id="fig3"></div>
+      
       <div class="figure" id="fig4"></div>
+      
       <div class="slider-parent">
-        <button id="play-button">Play</button>
+        <div id="Playbutton"> <button id="play-button">Play</button> </div>
         <div id="histogram-timeline" class="slider-item"></div>
         <div id="slider" class="slider-item"></div>
       </div>
+      
+        <div class="figure" id="fig3"></div> 
+
     </div>
+      
 
     <script type="module" src="/src/main.js"></script>
   </body>
