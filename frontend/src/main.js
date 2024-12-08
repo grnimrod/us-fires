@@ -137,7 +137,7 @@ async function init() {
     choroplethMap.updateMap(activeMonthData);
     sunburstChart.updateSunburst(activeMonthData);
     // TODO: isoplethMap.updateIsoplethMap(activeMonthData);
-    // TODO: spiralHeatmap.updateHeatmap(activeFullData);
+    spiralHeatmap.updateHeatmap(activeFullData);
   }
 
   const histTimeline = createHistogram("#histogram-timeline", firesData);
@@ -164,7 +164,7 @@ async function init() {
     .ticks(numTicks);
 
   const spiralHeatmap = createSpiralHeatmap("#fig3", firesData, sliderRange);
-  spiralHeatmap.updateHeatmap();
+  //spiralHeatmap.updateHeatmapSelection();
   // Set up dropdown menu functionality
   const chartSelector = document.getElementById("chartSelector");
 
