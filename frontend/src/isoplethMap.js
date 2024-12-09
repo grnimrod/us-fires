@@ -11,6 +11,7 @@ import {
   pointer,
   scaleThreshold,
   timeFormat,
+  geoTransform,
 } from "d3";
 import { contours } from "d3-contour";
 import { legend } from "./colorLegend";
@@ -18,11 +19,13 @@ import { setUpContainer } from "./setUpContainer";
 import * as topojson from "topojson-client";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
+const isoplethMapStandardWidth = 643.6;
+const isoplethMapStandardHeight = 267.2;
 
 // Define the grid resolution (number of cells in x and y directions)
 let fireDataPoints;
 let gridResolutionX = 500;
-let gridResolutionY;
+let gridResolutionY = 300;
 let tooltipIsoband;
 let tooltipFire;
 let prevZoomingScale = 1;
@@ -84,7 +87,7 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
     [containerWidth, containerHeight],
     topojson.feature(topoJsonData, topoJsonData.objects.states)
   );
-  gridResolutionY = (gridResolutionX * containerHeight) / containerWidth;
+//   gridResolutionY = (gridResolutionX * isoplethMapStandardHeight) / isoplethMapStandardWidth;
   const path = geoPath().projection(projection);
 
   const g = svg.append("g");
@@ -208,7 +211,7 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
     gridResolutionY,
     yearMonth
   ).then((contours) => {
-    drawIsolines(contours, g, containerWidth);
+    drawIsolines(contours, g, containerWidth, containerHeight);
   });
 
   legend(
@@ -279,7 +282,7 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
         gridResolutionY,
         yearMonth
       ).then((contours) => {
-        drawIsolines(contours, g, containerWidth);
+        drawIsolines(contours, g, containerWidth, containerHeight);
       });
 
       const backgroundText = svg.select(".background-title");
@@ -303,13 +306,34 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
   };
 }
 
-function drawIsolines(polygons, g, width) {
+function drawIsolines(polygons, g, width, height) {
+    const xScaleFactor = isoplethMapStandardWidth / gridResolutionX;
+    const yScaleFactor = isoplethMapStandardHeight / gridResolutionY;
+    const scaleFactor = Math.max(height/isoplethMapStandardHeight, width/isoplethMapStandardWidth);
+    console.log("width %s height %s resoX %s resoY %s xScale %s yScale %s scaleWidth %s scaleHeight %s", width, height, gridResolutionX, gridResolutionY, xScaleFactor, yScaleFactor, width/isoplethMapStandardWidth, height/isoplethMapStandardHeight);
+    const xOffset = (width - isoplethMapStandardWidth * scaleFactor) / 2;
+    const yOffset = (height - isoplethMapStandardHeight * scaleFactor) / 2;
+    // const pathGenerator = geoPath(geoTransform({
+    //     point: function(x, y) {
+    //         this.stream.point(x * xScaleFactor*scaleFactor, y * yScaleFactor*scaleFactor)
+    //     }
+    // }))
+    const pathGenerator = geoPath(geoTransform({
+        point: function(x, y) {
+            this.stream.point(
+                (x * xScaleFactor * scaleFactor) + xOffset,
+                (y * yScaleFactor * scaleFactor) + yOffset 
+            );
+        }
+    }));
+    
+
   g.selectAll("path.isopleth-band")
     .data(polygons)
     .enter()
     .append("path")
     .attr("class", "isopleth-band")
-    .attr("d", geoPath(geoIdentity().scale(width / gridResolutionX)))
+    .attr("d", pathGenerator)
     .attr("fill", (d) => colorScale(d.value))
     .attr("stroke", "none")
     .on("mouseover", function (event, d) {
@@ -333,7 +357,7 @@ function drawIsolines(polygons, g, width) {
       const influencingFires = highlightInfluencingDataPoints(
         event,
         polygons,
-        width / gridResolutionX
+        scaleFactor
       );
       // console.log("High influencing fires %s", influencingFires);
       // Clear previous highlighted points
@@ -396,7 +420,7 @@ function drawIsolines(polygons, g, width) {
     .enter()
     .append("path")
     .attr("class", "isopleth-path")
-    .attr("d", geoPath(geoIdentity().scale(width / gridResolutionX)))
+    .attr("d", pathGenerator)
     .attr("fill", "none")
     .attr("stroke", "black") // Outline color
     .attr("stroke-width", 0.2);
