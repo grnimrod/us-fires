@@ -31,6 +31,12 @@ class EventEmitter {
   }
 }
 
+const menuOptions = [
+  { value: "binnedMap", text: "Binned Map" },
+  { value: "choroplethMap", text: "Choropleth Map" },
+  { value: "isoplethMap", text: "Isopleth Map" },
+];
+
 async function init() {
   const rawData = await fetchFiresData();
   const cleanData = cleanFiresData(rawData);
@@ -107,6 +113,48 @@ async function init() {
   const eventEmitter = new EventEmitter();
   let isSliding = false;
 
+  const dropdownSelection = select("#dropdown-container");
+
+  const menu = dropdownSelection
+    .selectAll("select")
+    .data([null])
+    .join("select")
+    .attr("class", "form-select")
+    .on("change", (event) => {
+      eventEmitter.emit("menuChange", event.target.value);
+    });
+
+  menu
+    .selectAll("option")
+    .data(menuOptions)
+    .join("option")
+    .attr("value", (option) => option.value)
+    .text((option) => option.text);
+
+  eventEmitter.on("menuChange", (selectedMap) => {
+    currentChart = selectedMap;
+
+    // Hide all maps initially
+    document.querySelector("#map1").style.visibility = "hidden";
+    document.querySelector("#map2").style.visibility = "hidden";
+    document.querySelector("#map3").style.visibility = "hidden";
+
+    // Show the selected map
+    switch (selectedMap) {
+      case "binnedMap":
+        document.querySelector("#map1").style.visibility = "visible";
+        break;
+      case "choroplethMap":
+        document.querySelector("#map2").style.visibility = "visible";
+        break;
+      case "isoplethMap":
+        document.querySelector("#map3").style.visibility = "visible";
+        break;
+    }
+  });
+
+  eventEmitter.emit("menuChange", menuOptions[0].value);
+
   const binnedMap = await createBinnedMap("#map1", firesData, eventEmitter);
   const choroplethMap = await createChoroplethMap(
     "#map2",
@@ -165,31 +213,6 @@ async function init() {
 
   const spiralHeatmap = createSpiralHeatmap("#fig3", firesData, sliderRange);
   //spiralHeatmap.updateHeatmapSelection();
-  // Set up dropdown menu functionality
-  const chartSelector = document.getElementById("chartSelector");
-
-  chartSelector.addEventListener("change", async (event) => {
-    const selectedChart = event.target.value;
-
-    // Toggle visibility instead of creating a new map
-
-    if (selectedChart === "binnedMap") {
-      document.querySelector("#map1").style.visibility = "visible";
-      document.querySelector("#map2").style.visibility = "hidden";
-      document.querySelector("#map3").style.visibility = "hidden";
-      currentChart = "binnedMap";
-    } else if (selectedChart === "choroplethMap") {
-      document.querySelector("#map1").style.visibility = "hidden";
-      document.querySelector("#map2").style.visibility = "visible";
-      document.querySelector("#map3").style.visibility = "hidden";
-      currentChart = "choroplethMap";
-    } else if (selectedChart === "isoplethMap") {
-      document.querySelector("#map1").style.visibility = "hidden";
-      document.querySelector("#map2").style.visibility = "hidden";
-      document.querySelector("#map3").style.visibility = "visible";
-      currentChart = "isoplethMap";
-    }
-  });
 
   // Set up play/pause button functionality
   let timer;
