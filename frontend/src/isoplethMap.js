@@ -4,10 +4,8 @@ import {
   select,
   min,
   max,
-  geoIdentity,
   scaleSequentialLog,
   interpolateRdPu,
-  zoom,
   pointer,
   scaleThreshold,
   timeFormat,
@@ -31,50 +29,13 @@ let tooltipFire;
 let prevZoomingScale = 1;
 let allContours = {};
 
-// Lookup table for Marching Squares - 16 configurations (0 to 15)
-const lookupTable = [
-  [], // 0: 0000, no line
-  [[0, 0.5, 0.5, 1]], // 1: 0001
-  [[0.5, 1, 1, 0.5]], // 2: 0010
-  [[0, 0.5, 1, 0.5]], // 3: 0011
-  [[0.5, 0, 1, 0.5]], // 4: 0100
-  [
-    [0, 0.5, 0.5, 0],
-    [0.5, 1, 1, 0.5],
-  ], // 5: 0101
-  [
-    [0.5, 0, 1, 0.5],
-    [0.5, 1, 1, 0.5],
-  ], // 6: 0110
-  [[0, 0.5, 0.5, 0]], // 7: 0111
-  [[0.5, 0, 0, 0.5]], // 8: 1000
-  [
-    [0.5, 0, 0, 0.5],
-    [0.5, 1, 1, 0.5],
-  ], // 9: 1001
-  [
-    [0.5, 0, 0, 0.5],
-    [0, 0.5, 1, 0.5],
-  ], // 10: 1010
-  [
-    [0.5, 1, 1, 0.5],
-    [0.5, 0, 0, 0.5],
-  ], // 11: 1011
-  [
-    [0.5, 0, 1, 0.5],
-    [0, 0.5, 1, 0.5],
-  ], // 12: 1100
-  [[0, 0.5, 1, 0.5]], // 13: 1101
-  [[0, 0.5, 0.5, 1]], // 14: 1110
-  [], // 15: 1111, no line
-];
 // Marching square thresholds
 const thresholds = [0.1, 0.5, 5, 20, 120, 500, 1000, 2000]; // Adjust these levels as needed
 const colorScale = scaleSequentialLog()
   .domain([min(thresholds), max(thresholds)])
   .interpolator(interpolateRdPu);
 
-export async function createIsoplethMap(container, initialData, eventEmitter) {
+export async function createIsoplethMap(container, initialData, eventEmitter, zoom, currentTransform) {
   const topoJsonData = await fetch(usAtlasUrl).then((response) =>
     response.json()
   );
@@ -170,34 +131,15 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
       .attr("selected", false);
   });
 
-  const z = zoom();
-
   svg.call(
-    z
-      .extent([
+    zoom.extent([
         [0, 0],
         [containerWidth, containerHeight],
       ])
-      .scaleExtent([1, 12])
-      .on("zoom", function zoomed(event, d) {
-        g.attr("transform", event.transform);
-        select("#map1 g").attr("transform", event.transform);
-        select("#map2 g").attr("transform", event.transform);
-        tooltipFire.style("opacity", 0);
-
-        const currentZoomingScale = event.transform.k;
-        if (currentZoomingScale > 2.5 && prevZoomingScale <= 2.5) {
-          g.select(".county-borders").style("opacity", 1);
-        }
-        if (currentZoomingScale <= 2.5 && prevZoomingScale > 2.5) {
-          g.select(".county-borders").style("opacity", 0);
-        }
-        prevZoomingScale = currentZoomingScale;
-      })
   );
 
   d3.select("#zoomResetBtnIso").on("click", function () {
-    svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
+    svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
 
     g.select(".county-borders").style("opacity", 0);
   });
@@ -550,4 +492,15 @@ function highlightInfluencingDataPoints(event, contourPolygons, scaleFactor) {
     );
   });
   return influencingDataPoints;
+}
+
+export function handleIsoplethSpecificZoom(event) {
+    const currentZoomingScale = event.transform.k;
+    if (currentZoomingScale > 2.5 && prevZoomingScale <= 2.5) {
+      select("#map3 .county-borders").style("opacity", 1);
+    }
+    if (currentZoomingScale <= 2.5 && prevZoomingScale > 2.5) {
+      select("#map3 .county-borders").style("opacity", 0);
+    }
+    prevZoomingScale = currentZoomingScale;
 }

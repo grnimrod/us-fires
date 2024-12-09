@@ -1,8 +1,8 @@
-import { timeFormat, select } from "d3";
+import { timeFormat, select, zoom } from "d3";
 import { sliderBottom } from "d3-simple-slider";
 import { createBinnedMap } from "./binnedMap.js";
 import { createChoroplethMap } from "./choroplethMap.js";
-import { createIsoplethMap } from "./isoplethMap";
+import { createIsoplethMap, handleIsoplethSpecificZoom } from "./isoplethMap";
 import { createSunburstChart } from "./sunburstChart.js";
 import { createHistogram } from "./histTimeline.js";
 import { createSpiralHeatmap } from "./spiralHeatmap.js";
@@ -36,6 +36,8 @@ const menuOptions = [
   { value: "choroplethMap", text: "Choropleth Map" },
   { value: "isoplethMap", text: "Isopleth Map" },
 ];
+
+let currentTransform = d3.zoomIdentity;  // Global zoom state shared across maps
 
 async function init() {
   const rawData = await fetchFiresData();
@@ -124,6 +126,22 @@ async function init() {
       eventEmitter.emit("menuChange", event.target.value);
     });
 
+  const z = zoom()
+    .scaleExtent([1, 12])
+    .on("zoom", function zoomed(event) {
+        currentTransform = event.transform;  // Update the shared zoom state
+        // Apply the transform to all maps
+        d3.select('#map1 g').attr("transform", currentTransform);
+        d3.select('#map1 .hexbin').attr("transform", currentTransform);
+        d3.select('#map2 g').attr("transform", currentTransform);
+        d3.select('#map3 g').attr("transform", currentTransform);
+
+        const currentZoomMap = select(this).node().parentNode.id
+        if (currentZoomMap === "map3") {
+          handleIsoplethSpecificZoom(event);
+        }
+    });
+
   menu
     .selectAll("option")
     .data(menuOptions)
@@ -142,25 +160,29 @@ async function init() {
     switch (selectedMap) {
       case "binnedMap":
         document.querySelector("#map1").style.visibility = "visible";
+        select("#map1 svg").transition().duration(750).call(z.transform, currentTransform);
         break;
       case "choroplethMap":
         document.querySelector("#map2").style.visibility = "visible";
+        select("#map2 svg").transition().duration(750).call(z.transform, currentTransform);
         break;
       case "isoplethMap":
         document.querySelector("#map3").style.visibility = "visible";
+        select("#map3 svg").transition().duration(750).call(z.transform, currentTransform);
         break;
     }
   });
 
   eventEmitter.emit("menuChange", menuOptions[0].value);
 
-  const binnedMap = await createBinnedMap("#map1", firesData, eventEmitter);
+  const binnedMap = await createBinnedMap("#map1", firesData, eventEmitter, z);
   const choroplethMap = await createChoroplethMap(
     "#map2",
     firesData,
-    eventEmitter
+    eventEmitter,
+    z
   );
-  const isoplethMap = await createIsoplethMap("#map3", firesData, eventEmitter);
+  const isoplethMap = await createIsoplethMap("#map3", firesData, eventEmitter, z, currentTransform);
 
   const sunburstChart = createSunburstChart("#fig4", firesData, eventEmitter);
 
@@ -268,16 +290,6 @@ async function init() {
     dashboardState.sliderIndex = val;
 
     updateCharts();
-
-    // spiralHeatmap.updateHeatmap(firesData[val]);
-    // binnedMap.updateBinnedMap(firesData[val]);
-    // choroplethMap.updateMap(firesData[val]);
-    // sunburstChart.updateSunburst(firesData[val]);
-    // // This is for performance concern. Simultaneouly updating the invisible isopleth map will block the main thread
-    // // TODO: Remove this if condition when performance optmization is done
-    // if (document.querySelector("#map3").style.visibility != "hidden") {
-    //   isoplethMap.updateIsoplethMap(firesData[val]);
-    // }
   });
 
   const gRange = sliderDiv

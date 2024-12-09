@@ -6,7 +6,6 @@ import {
   max,
   interpolateOranges,
   lab,
-  zoom,
   timeFormat,
 } from "d3";
 import { hexbin } from "d3-hexbin";
@@ -16,7 +15,7 @@ import { legend } from "./colorLegend";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
-export async function createBinnedMap(container, initialData, eventEmitter) {
+export async function createBinnedMap(container, initialData, eventEmitter, zoom) {
   const topoJsonData = await fetch(usAtlasUrl).then((response) =>
     response.json()
   );
@@ -67,6 +66,7 @@ export async function createBinnedMap(container, initialData, eventEmitter) {
   const hexGroup = svg.append("g");
 
   hexGroup
+    .attr("class", "hexbin")
     .selectAll("path")
     .data(bins)
     .join("path")
@@ -77,23 +77,15 @@ export async function createBinnedMap(container, initialData, eventEmitter) {
 
   select(container).append(() => svg.node());
 
-  const z = zoom();
-
   svg.call(
-    z
-      .extent([
+    zoom.extent([
         [0, 0],
         [containerWidth, containerHeight],
       ])
-      .scaleExtent([1, 8])
-      .on("zoom", function zoomed(event, d) {
-        g.attr("transform", event.transform);
-        hexGroup.attr("transform", event.transform);
-      })
   );
 
   select("#zoomResetBtnBin").on("click", function () {
-    svg.transition().duration(750).call(z.transform, d3.zoomIdentity);
+    svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
   });
 
   let isSliding = false;
