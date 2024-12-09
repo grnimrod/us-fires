@@ -72,9 +72,7 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
     .arcLabel("month")
     .coilLabel("year")*/
 
-  let color = scaleSequential()
-    .domain(scale)
-    .interpolator(interpolateOranges);
+  let color = scaleSequential().domain(scale).interpolator(interpolateOranges);
 
   //ENSURE THE DATA IS SORTED CORRECTLY, IN THIS CASE BY YEAR AND MONTH
   //THE SPIRAL WILL START IN THE MIDDLE AND WORK OUTWARDS
@@ -114,9 +112,7 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
     //.attr("width", chartWidth + margin.left + margin.right)
     //.attr("height", chartHeight + margin.top + margin.bottom);
 
-    g = svg
-      .append("g")
-      .attr("transform", "translate(" + 0 + "," + 0 + ")");
+    g = svg.append("g").attr("transform", "translate(" + 0 + "," + 0 + ")");
 
     g.datum(chartData.values).call(heatmap);
     g.selectAll(".arc")
@@ -158,7 +154,7 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
   });
   //return heatmap;
   return {
-    updateHeatmap(filteredData){
+    updateHeatmap(filteredData) {
       let select = document.getElementsByClassName("selected-arc")[0];
       let arc = document.getElementById(filteredData[slider.value()].month);
 
@@ -170,25 +166,25 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
         max(filteredData, (monthEntry) => monthEntry.totalFireCount),
       ];
 
-      color = scaleSequential()
-      .domain(scale)
-      .interpolator(interpolateOranges);
+      color = scaleSequential().domain(scale).interpolator(interpolateOranges);
 
       nestedData = d3
-      .nest()
-      .key(function (d) {
-        return d.month;
-      })
-      .sortValues(function (a, b) {
-        return a.date - b.date;
-      })
-      .entries(filteredData);
+        .nest()
+        .key(function (d) {
+          return d.month;
+        })
+        .sortValues(function (a, b) {
+          return a.date - b.date;
+        })
+        .entries(filteredData);
 
       nestedData.forEach(function (chartData) {
         d3Select(chartData.key)
-        .selectAll("path")
-        .style("fill", color(chartData.values[0].totalFireCount));
-    })
+          .selectAll("path")
+          .transition()
+          .duration(100)
+          .style("fill", color(chartData.values[0].totalFireCount));
+      });
     },
   };
 }
