@@ -183,7 +183,9 @@ async function init() {
     binnedMap.updateBinnedMap(activeMonthData);
     choroplethMap.updateMap(activeMonthData);
     sunburstChart.updateSunburst(activeMonthData);
-    // TODO: isoplethMap.updateIsoplethMap(activeMonthData);
+    // TODO: Download the contours file at https://drive.google.com/file/d/19pf5xAQeCj7YhtUh9SNzhPWUhu77sB71/view
+    //  And uncomment the below line
+    // isoplethMap.updateIsoplethMap(activeMonthData);
     spiralHeatmap.updateHeatmap(activeFullData);
   }
 
