@@ -108,26 +108,31 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
     .attr("d", path(topojson.mesh(topoJsonData, topoJsonData.objects.counties)))
     .style("opacity", 0);
 
-  fireDataPoints = initialMonthlyStructure.children.map((fireEntry) => {
-    const [x, y] = projection([fireEntry.LONGITUDE, fireEntry.LATITUDE]);
-    return [
-      x,
-      y,
-      fireEntry.FIRE_SIZE,
-      fireEntry.FIRE_NAME,
-      fireEntry.STATE,
-      fireEntry.COUNTY,
-      fireEntry.DISCOVERY_DATE?.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }),
-      fireEntry.CONT_DATE?.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }),
-    ];
+  fireDataPoints = initialMonthlyStructure.children
+    .filter((d) => {
+        const projected = projection([d.LONGITUDE, d.LATITUDE]);
+        return projected !== null;
+    })
+    .map((fireEntry) => {
+        const [x, y] = projection([fireEntry.LONGITUDE, fireEntry.LATITUDE]);
+        return [
+            x,
+            y,
+            fireEntry.FIRE_SIZE,
+            fireEntry.FIRE_NAME,
+            fireEntry.STATE,
+            fireEntry.COUNTY,
+            fireEntry.DISCOVERY_DATE?.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+            }),
+            fireEntry.CONT_DATE?.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+            }),
+        ];
   });
 
   // Define a tooltip div
@@ -244,7 +249,12 @@ export async function createIsoplethMap(container, initialData, eventEmitter) {
 
   return {
     updateIsoplethMap(newData) {
-      fireDataPoints = newData.monthlyStructure.children.map((fireEntry) => {
+      fireDataPoints = newData.monthlyStructure.children
+      .filter((d) => {
+        const projected = projection([d.LONGITUDE, d.LATITUDE]);
+        return projected !== null;
+        })
+      .map((fireEntry) => {
         const [x, y] = projection([fireEntry.LONGITUDE, fireEntry.LATITUDE]);
         return [
           x,
