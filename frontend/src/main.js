@@ -134,7 +134,6 @@ async function init() {
   eventEmitter.on("menuChange", (selectedMap) => {
     currentChart = selectedMap;
 
-    // Hide all maps initially
     document.querySelector("#map1").style.visibility = "hidden";
     document.querySelector("#map2").style.visibility = "hidden";
     document.querySelector("#map3").style.visibility = "hidden";

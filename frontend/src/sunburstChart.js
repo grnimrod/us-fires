@@ -73,14 +73,6 @@ export function createSunburstChart(container, initialData, eventEmitter) {
     .attr("fill", "none")
     .attr("pointer-events", "all");
 
-  // Chart title current month
-  svg
-    .append("text")
-    .attr("x", containerWidth / 2 - 3 * radius)
-    .attr("y", margin.top / 2)
-    .attr("font-size", "20px")
-    .text(`${timeFormat("%Y-%m")(initialData[0].month)}`);
-
   const arcs = svg
     .append("g")
     .attr(
@@ -123,8 +115,16 @@ export function createSunburstChart(container, initialData, eventEmitter) {
     eventEmitter.emit("resetData");
   });
 
+  // Chart title current month
+  const chartTitle = svg
+    .append("text")
+    .attr("x", containerWidth / 2 - 3 * radius)
+    .attr("y", margin.top / 2)
+    .attr("font-size", "20px")
+    .text(`${timeFormat("%Y-%m")(initialData[0].month)}`);
+
   // Add fire count title to middle of the chart
-  svg
+  const midTitle = svg
     .append("text")
     .attr(
       "transform",
@@ -169,8 +169,9 @@ export function createSunburstChart(container, initialData, eventEmitter) {
     }) rotate(${x < 180 ? 0 : 180})`;
   }
 
-  const labels = svg // some weird behavior, on update adds new one doesn't remove existing one
+  const labels = svg
     .append("g")
+    .attr("class", "labels")
     .attr(
       "transform",
       `translate(${containerWidth / 2}, ${(containerHeight + margin.top) / 2})`
@@ -198,7 +199,7 @@ export function createSunburstChart(container, initialData, eventEmitter) {
 
   return {
     updateSunburst(newData) {
-      svg.selectAll("text").remove();
+      svg.selectAll(".labels").remove();
       svg.selectAll("title").remove();
 
       const currentEntryCategories = newData.categories;
@@ -237,12 +238,8 @@ export function createSunburstChart(container, initialData, eventEmitter) {
         };
       });
 
-      svg
-        .append("text")
-        .attr("x", containerWidth / 2 - 3 * radius)
-        .attr("y", margin.top / 2)
-        .attr("font-size", "20px")
-        .text(`${timeFormat("%Y-%m")(newData.month)}`);
+      chartTitle.text(`${timeFormat("%Y-%m")(newData.month)}`);
+      midTitle.text(newRoot.value);
 
       const newArcs = svg
         .select("g")
@@ -313,23 +310,9 @@ export function createSunburstChart(container, initialData, eventEmitter) {
 
       newArcs.style("cursor", "pointer").on("click", clicked);
 
-      svg
-        .append("text")
-        .attr(
-          "transform",
-          `translate(${containerWidth / 2}, ${
-            (containerHeight + margin.top) / 2
-          })`
-        )
-        .attr("text-anchor", "middle")
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("dy", "0.3em")
-        .attr("font-size", `${radius * 0.025}em`)
-        .text(newRoot.value);
-
       const newLabels = svg
         .append("g")
+        .attr("class", "labels")
         .attr(
           "transform",
           `translate(${containerWidth / 2}, ${
