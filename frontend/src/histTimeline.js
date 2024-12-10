@@ -7,7 +7,7 @@ export function createHistogram(container, data) {
   const height = 100;
   const margin = {
     top: 20,
-    right: 40,
+    right: 30,
     bottom: 20,
     left: 30,
   };

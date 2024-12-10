@@ -246,7 +246,7 @@ async function init() {
     .min(0)
     .max(firesData.length - 1)
     .step(1)
-    .width(sliderDivWidth - 96.028)
+    .width(sliderDivWidth - 82.028)
     .tickValues(tickValues)
     .tickFormat((i) => timeFormat("%Y-%m")(firesData[i].month))
     .ticks(numTicks);
