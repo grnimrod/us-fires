@@ -132,7 +132,10 @@ export async function createIsoplethMap(container, initialData, eventEmitter, zo
   });
 
   // Clicking on map removes highlighted fires
-  svg.on("mousedown", function () {
+  svg.on("mousedown", function (event) {
+    if (event.target !== this) {
+      return;
+    }
     d3.selectAll(".highlighted-point").remove();
   })
 
@@ -311,7 +314,7 @@ function drawIsolines(polygons, g, width, height) {
       tooltipIsoband.transition().duration(200).style("opacity", 0);
     })
     .on("mousedown", function (event) {
-      event.stopPropagation();
+      // event.stopPropagation();
 
       const influencingFires = highlightInfluencingDataPoints(
         event,
