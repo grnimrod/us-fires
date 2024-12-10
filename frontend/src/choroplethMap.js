@@ -47,7 +47,7 @@ export async function createChoroplethMap(
     ),
     svg,
     {
-      title: "Fire Count by State",
+      title: "Fire Count by State (Logarithmic Scale)",
       //className: "color-legend",
       //translateX: containerWidth - 300, 
       //translateY: containerHeight - 80, 

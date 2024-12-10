@@ -117,7 +117,8 @@ export async function createBinnedMap(container, initialData, eventEmitter) {
     ),
     svg,
     {
-      title: "Binned Fire Count",
+      title: "Binned Fire Count (Logarithmic Scale)",
+      orientation: "vertical"
       //className: "spiralLegend",
       //translateX: -220,
       //translateY: -230
