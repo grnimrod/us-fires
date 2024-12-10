@@ -7,9 +7,9 @@ export function createHistogram(container, data) {
   const height = 100;
   const margin = {
     top: 20,
-    right: 20,
+    right: 40,
     bottom: 20,
-    left: 20,
+    left: 30,
   };
 
   const svg = create("svg")
