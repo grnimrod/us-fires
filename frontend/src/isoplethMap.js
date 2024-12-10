@@ -123,13 +123,18 @@ export async function createIsoplethMap(container, initialData, eventEmitter, zo
   // Hide fire tooltip when clicking elsewhere
   d3.select("body").on("click", function () {
     tooltipFire.style("opacity", 0);
-    d3.selectAll(".highlighted-point")
-      .transition()
-      .duration(200)
-      .attr("r", 1)
-      .attr("fill", "yellow")
-      .attr("selected", false);
+    // d3.selectAll(".highlighted-point")
+    //   .transition()
+    //   .duration(200)
+    //   .attr("r", 1)
+    //   .attr("fill", "yellow")
+    //   .attr("selected", false);
   });
+
+  // Clicking on map removes highlighted fires
+  svg.on("mousedown", function () {
+    d3.selectAll(".highlighted-point").remove();
+  })
 
   svg.call(
     zoom.extent([
@@ -306,6 +311,8 @@ function drawIsolines(polygons, g, width, height) {
       tooltipIsoband.transition().duration(200).style("opacity", 0);
     })
     .on("mousedown", function (event) {
+      event.stopPropagation();
+
       const influencingFires = highlightInfluencingDataPoints(
         event,
         polygons,
@@ -347,8 +354,16 @@ function drawIsolines(polygons, g, width, height) {
                   .attr("fill", "yellow");
               }
             })
+            .on("mousedown", function (event) {
+              event.stopPropagation();
+            })
             .on("click", function (event, d) {
               event.stopPropagation();
+
+              d3.selectAll(".highlighted-point")
+                .attr("r", 1)
+                .attr("fill", "yellow")
+                .attr("selected", false);
 
               d3.select(this)
                 .attr("r", 1.5)
@@ -483,7 +498,7 @@ function highlightInfluencingDataPoints(event, contourPolygons, xScale, yScale, 
     bandIndex + 1 < thresholds.length
       ? thresholds[bandIndex + 1]
       : Number.MAX_SAFE_INTEGER;
-  console.log("Band index %s valueLow %s valueHigh %s", bandIndex, bandValueLow, bandValueHigh);
+  // console.log("Band index %s valueLow %s valueHigh %s", bandIndex, bandValueLow, bandValueHigh);
   const influencingDataPoints = fireDataPoints.filter(([x, y, fireSize]) => {
     // Calculate the distance from the clicked point to the fire data point
     const dist = Math.sqrt(Math.pow(clickX - x, 2) + Math.pow(clickY - y, 2));
