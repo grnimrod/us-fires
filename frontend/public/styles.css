@@ -68,6 +68,10 @@
   fill: #000;
 }
 
+.arc path{
+  cursor: pointer;
+}
+
 .arc.selected-arc path {
   stroke: black;
   paint-order: stroke;
