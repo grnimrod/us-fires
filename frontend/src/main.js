@@ -1,4 +1,4 @@
-import { timeFormat, select, zoom } from "d3";
+import { timeMonth, timeFormat, select, zoom } from "d3";
 import { sliderBottom } from "d3-simple-slider";
 import { createBinnedMap } from "./binnedMap.js";
 import { createChoroplethMap } from "./choroplethMap.js";
@@ -37,7 +37,7 @@ const menuOptions = [
   { value: "isoplethMap", text: "Isopleth Map" },
 ];
 
-let currentTransform = d3.zoomIdentity;  // Global zoom state shared across maps
+let currentTransform = d3.zoomIdentity; // Global zoom state shared across maps
 
 async function init() {
   const rawData = await fetchFiresData();
@@ -129,17 +129,17 @@ async function init() {
   const z = zoom()
     .scaleExtent([1, 12])
     .on("zoom", function zoomed(event) {
-        currentTransform = event.transform;  // Update the shared zoom state
-        // Apply the transform to all maps
-        d3.select('#map1 g').attr("transform", currentTransform);
-        d3.select('#map1 .hexbin').attr("transform", currentTransform);
-        d3.select('#map2 g').attr("transform", currentTransform);
-        d3.select('#map3 g').attr("transform", currentTransform);
+      currentTransform = event.transform; // Update the shared zoom state
+      // Apply the transform to all maps
+      d3.select("#map1 g").attr("transform", currentTransform);
+      d3.select("#map1 .hexbin").attr("transform", currentTransform);
+      d3.select("#map2 g").attr("transform", currentTransform);
+      d3.select("#map3 g").attr("transform", currentTransform);
 
-        const currentZoomMap = select(this).node().parentNode.id
-        if (currentZoomMap === "map3") {
-          handleIsoplethSpecificZoom(event);
-        }
+      const currentZoomMap = select(this).node().parentNode.id;
+      if (currentZoomMap === "map3") {
+        handleIsoplethSpecificZoom(event);
+      }
     });
 
   menu
@@ -160,15 +160,24 @@ async function init() {
     switch (selectedMap) {
       case "binnedMap":
         document.querySelector("#map1").style.visibility = "visible";
-        select("#map1 svg").transition().duration(750).call(z.transform, currentTransform);
+        select("#map1 svg")
+          .transition()
+          .duration(750)
+          .call(z.transform, currentTransform);
         break;
       case "choroplethMap":
         document.querySelector("#map2").style.visibility = "visible";
-        select("#map2 svg").transition().duration(750).call(z.transform, currentTransform);
+        select("#map2 svg")
+          .transition()
+          .duration(750)
+          .call(z.transform, currentTransform);
         break;
       case "isoplethMap":
         document.querySelector("#map3").style.visibility = "visible";
-        select("#map3 svg").transition().duration(750).call(z.transform, currentTransform);
+        select("#map3 svg")
+          .transition()
+          .duration(750)
+          .call(z.transform, currentTransform);
         break;
     }
   });
@@ -182,7 +191,13 @@ async function init() {
     eventEmitter,
     z
   );
-  const isoplethMap = await createIsoplethMap("#map3", firesData, eventEmitter, z, currentTransform);
+  const isoplethMap = await createIsoplethMap(
+    "#map3",
+    firesData,
+    eventEmitter,
+    z,
+    currentTransform
+  );
 
   const sunburstChart = createSunburstChart("#fig4", firesData, eventEmitter);
 
@@ -217,13 +232,15 @@ async function init() {
   const sliderDiv = select("#slider");
   const sliderDivWidth = sliderDiv.node().getBoundingClientRect().width;
 
-  const numTicks = 6;
-  const tickInterval = Math.floor((firesData.length - 1) / (numTicks - 1));
+  const numTicks = 12;
+  const tickInterval = Math.floor(firesData.length / numTicks);
+  console.log(tickInterval);
 
   const tickValues = Array.from(
     { length: numTicks },
-    (_, i) => i * tickInterval
+    (_, i) => i * tickInterval + 18
   );
+  console.log(tickValues);
 
   const sliderRange = sliderBottom()
     .min(0)
