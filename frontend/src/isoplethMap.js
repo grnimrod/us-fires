@@ -309,7 +309,11 @@ function drawIsolines(polygons, g, width, height) {
       const influencingFires = highlightInfluencingDataPoints(
         event,
         polygons,
-        scaleFactor
+        xScaleFactor,
+        yScaleFactor,
+        scaleFactor,
+        xOffset,
+        yOffset
       );
       // console.log("High influencing fires %s", influencingFires);
       // Clear previous highlighted points
@@ -464,13 +468,13 @@ function saveContoursToFile() {
 }
 
 // Function to highlight influencing data points
-function highlightInfluencingDataPoints(event, contourPolygons, scaleFactor) {
+function highlightInfluencingDataPoints(event, contourPolygons, xScale, yScale, scaleFactor, xOffset, yOffset) {
   let [clickX, clickY] = pointer(event);
   const clickedBand = contourPolygons
     .toReversed()
     .find((band) =>
       band.coordinates.some((c) =>
-        d3.polygonContains(c[0], [clickX / scaleFactor, clickY / scaleFactor])
+        d3.polygonContains(c[0], [(clickX-xOffset)/xScale/scaleFactor, (clickY-yOffset)/yScale/scaleFactor])
       )
     );
   const bandIndex = contourPolygons.indexOf(clickedBand);
@@ -479,6 +483,7 @@ function highlightInfluencingDataPoints(event, contourPolygons, scaleFactor) {
     bandIndex + 1 < thresholds.length
       ? thresholds[bandIndex + 1]
       : Number.MAX_SAFE_INTEGER;
+  console.log("Band index %s valueLow %s valueHigh %s", bandIndex, bandValueLow, bandValueHigh);
   const influencingDataPoints = fireDataPoints.filter(([x, y, fireSize]) => {
     // Calculate the distance from the clicked point to the fire data point
     const dist = Math.sqrt(Math.pow(clickX - x, 2) + Math.pow(clickY - y, 2));
