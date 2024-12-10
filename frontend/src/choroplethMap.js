@@ -10,6 +10,7 @@ import {
 } from "d3";
 import * as topojson from "topojson-client";
 import { setUpContainer } from "./setUpContainer";
+import { legend } from "./colorLegend";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
@@ -35,6 +36,23 @@ export async function createChoroplethMap(
       }),
     ])
     .interpolator(interpolateOranges);
+  
+  // Create the legend and append it to the SVG
+  const colorLegend = legend(
+    scaleSequentialLog(
+      [1, max(initialData, (monthEntry) => {
+        return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
+      })],
+      interpolateOranges
+    ),
+    svg,
+    {
+      title: "Fire Count by State",
+      //className: "color-legend",
+      //translateX: containerWidth - 300, 
+      //translateY: containerHeight - 80, 
+    }
+  );
 
   // Map state names to FIPS numeric identifiers
   // If you give namemap a state name, it returns the state id
@@ -139,6 +157,7 @@ export async function createChoroplethMap(
         .remove(); // Remove the background title when not sliding
     }
   });
+
 
   return {
     updateMap(newData) {
