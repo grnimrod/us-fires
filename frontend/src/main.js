@@ -234,13 +234,11 @@ async function init() {
 
   const numTicks = 12;
   const tickInterval = Math.floor(firesData.length / numTicks);
-  console.log(tickInterval);
 
   const tickValues = Array.from(
     { length: numTicks },
     (_, i) => i * tickInterval + 18
   );
-  console.log(tickValues);
 
   const sliderRange = sliderBottom()
     .min(0)
@@ -295,10 +293,16 @@ async function init() {
   }
 
   sliderRange.on("end", function () {
+    const clickedValue = sliderRange.value();
+
     if (sliderRange.value() == sliderRange.max()) {
       playButton.text("Restart");
       sliderRange.value(sliderRange.max());
     } else if (playButton.text() == "Pause") {
+      resetTimer();
+      sliderRange.value(clickedValue);
+    } else if (playButton.text() == "Restart") {
+      playButton.text("Play");
       resetTimer();
     }
   });

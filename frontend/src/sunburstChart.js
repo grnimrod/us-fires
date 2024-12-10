@@ -82,11 +82,12 @@ export function createSunburstChart(container, initialData, eventEmitter) {
     .selectAll("path")
     .data(root.descendants().slice(1))
     .join("path")
+    .attr("class", "arcs")
     .attr("fill", (d) => {
       while (d.depth > 1) d = d.parent;
       return color(d.data.name);
     })
-    // .attr("fill-opacity", 0.9)
+    .attr("fill-opacity", 0.9)
     .attr("pointer-events", "auto")
     .attr("d", (d) => arcGenerator(d.current));
 
@@ -100,18 +101,29 @@ export function createSunburstChart(container, initialData, eventEmitter) {
         .join(": ")}\nNumber of fires: ${d.value}`
   );
 
+  let selectedCategory = null;
+
   function clicked(event, d) {
-    arcs.attr("fill-opacity", (slice) => {
-      return slice.data.name == d.data.name ? 0.9 : 0.3;
+    selectedCategory = d.data.name;
+
+    const currentArcs = d3.selectAll(".arcs");
+
+    currentArcs.attr("fill-opacity", (slice) => {
+      return slice.data.name == selectedCategory ? 0.9 : 0.3;
     });
 
-    eventEmitter.emit("categorySelected", d.data.name);
+    eventEmitter.emit("categorySelected", selectedCategory);
   }
 
   arcs.style("cursor", "pointer").on("click", clicked);
 
   listeningRect.on("click", function () {
-    arcs.attr("fill-opacity", 0.9);
+    selectedCategory = null;
+
+    const currentArcs = d3.selectAll(".arcs");
+
+    currentArcs.attr("fill-opacity", 0.9);
+
     eventEmitter.emit("resetData");
   });
 
@@ -252,12 +264,20 @@ export function createSunburstChart(container, initialData, eventEmitter) {
         .selectAll("path")
         .data(newRoot.descendants().slice(1), (d) => d.data.name)
         .join("path")
+        .attr("class", "arcs")
         .attr("d", (d) => arcGenerator(d.current))
         .attr("fill", (d) => {
           while (d.depth > 1) d = d.parent;
           return color(d.data.name);
+        })
+        .attr("fill-opacity", (slice) => {
+          console.log(slice.data.count);
+          if (slice.data.count === 0) {
+            return 0;
+          }
+          if (!selectedCategory) return 0.9;
+          return slice.data.name === selectedCategory ? 0.9 : 0.3;
         });
-      // .attr("fill-opacity", 0.9);
 
       const t = svg.transition().duration(150);
       newArcs
