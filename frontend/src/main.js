@@ -90,6 +90,41 @@ async function init() {
         };
       });
     },
+
+    applyFilterByState(selectedState){
+      if (!selectedState) {
+        this.data.filteredData = null; // Clear filter
+        return;
+      }
+
+      // Filter data based on the selected state
+      this.data.filteredData = this.data.fullData.map((monthData) => {
+        // Filter children to include only fires in the selected state
+        const filteredChildren = monthData.monthlyStructure.children.filter(
+          (fire) => fire.STATE_NAME === selectedState 
+        );
+
+        // Update the state counts accordingly
+        const filteredStateCounts = monthData.stateCounts.map((state) => {
+          return {
+            state: state.state,
+            count: state.state === selectedState ? state.count : 0,
+          };
+        });
+
+        // Return a new monthData object with updated values
+        return {
+          ...monthData,
+          monthlyStructure: {
+            ...monthData.monthlyStructure,
+            children: filteredChildren,
+          },
+          stateCounts: filteredStateCounts,
+          totalFireCount: filteredChildren.length,
+        };
+      })
+
+    },
     getActiveFullData() {
       if (this.filterCategory) {
         return this.data.filteredData;
@@ -191,6 +226,14 @@ async function init() {
     eventEmitter,
     z
   );
+
+  eventEmitter.on("stateSelected", (selectedState) => {
+    console.log("State selected", selectedState);
+    dashboardState.filterCategory = selectedState;
+    dashboardState.applyFilterByState(selectedState);
+    updateCharts();
+  });
+
   const isoplethMap = await createIsoplethMap(
     "#map3",
     firesData,

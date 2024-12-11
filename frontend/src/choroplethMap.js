@@ -75,15 +75,47 @@ export async function createChoroplethMap(
   );
   const path = geoPath().projection(projection);
 
+  const listeningRect = svg
+    .append("rect")
+    .attr("width", containerWidth)
+    .attr("height", containerHeight)
+    .attr("fill", "none")
+    .attr("pointer-events", "all");  // Make the entire SVG clickable
+
   const g = svg.append("g");
+
+  const statesData = topojson.feature(topoJsonData, topoJsonData.objects.states);
 
   const states = g
     .selectAll("path")
-    .data(topojson.feature(topoJsonData, topoJsonData.objects.states).features)
+    .data(statesData.features)
     .join("path")
     .attr("d", path)
-    .attr("fill", (d) => color(valuemapForFirstEntry.get(d.id)));
+    .attr("fill", (d) => color(valuemapForFirstEntry.get(d.id)))
+    .attr("stroke", "#fff")
+    .attr("stroke-width", 0.5);
+  
+  states
+  .append("title")
+  .text((d) => {
+    const stateId = d.id;
+    const stateName = [...namemap.entries()].find(([name, id]) => id === stateId)?.[0];
+    const fireCount = valuemapForFirstEntry.get(stateId) || 0;
+    return `${stateName || "Unknown"}\nNumber of Fires: ${fireCount}`;
+  });
 
+    states.on("click", function(event, d) {
+      const selectedState = d.properties.name; 
+      eventEmitter.emit("stateSelected", selectedState);
+    });
+
+  listeningRect.on("click", function () {
+    //selectedStatesSet.clear();
+    eventEmitter.emit("resetData");
+    states.attr("opacity", 1).attr("stroke", "none"); // Reset state styles
+  });
+
+  // Draw state borders
   g.append("path")
     .attr("fill", "none")
     .attr("stroke", "white")
@@ -143,6 +175,14 @@ export async function createChoroplethMap(
         .transition()
         .duration(100)
         .attr("fill", (d) => color(valuemapForEntry.get(d.id)));
+
+      // Update tooltips dynamically
+      states.select("title").text((d) => {
+        const stateId = d.id;
+        const stateName = [...namemap.entries()].find(([name, id]) => id === stateId)?.[0];
+        const fireCount = valuemapForEntry.get(stateId) || 0;
+        return `${stateName || "Unknown"}\nNumber of Fires: ${fireCount}`;
+      });
 
       const backgroundText = svg.select(".background-title");
       if (isSliding) {
