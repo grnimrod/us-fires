@@ -123,10 +123,10 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
       });
 
     colorLegend = legend(scaleSequential(scale, interpolateOranges), svg, {
-      title: "fire count",
+      title: "Fire Count",
       className: "spiralLegend",
-      translateX: -160,
-      translateY: -230,
+      translateX: -170,
+      translateY: 280,
     });
 
     let element = d3.select("#fig3").select("svg");
