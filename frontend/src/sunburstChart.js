@@ -104,15 +104,26 @@ export function createSunburstChart(container, initialData, eventEmitter) {
   let selectedCategory = null;
 
   function clicked(event, d) {
-    selectedCategory = d.data.name;
-
     const currentArcs = d3.selectAll(".arcs");
 
-    currentArcs.attr("fill-opacity", (slice) => {
-      return slice.data.name == selectedCategory ? 0.9 : 0.3;
-    });
+    currentArcs.attr("fill-opacity", 0.9);
 
-    eventEmitter.emit("categorySelected", selectedCategory);
+    // If no slice is selected or a different slice is clicked
+    if (selectedCategory === null || selectedCategory !== d.data.name) {
+      selectedCategory = d.data.name;
+
+      currentArcs.attr("fill-opacity", (slice) => {
+        return slice.data.name === selectedCategory ? 0.9 : 0.3; // Highlight the selected slice
+      });
+
+      eventEmitter.emit("categorySelected", selectedCategory);
+    }
+    // If the same slice is clicked again, reset the selection
+    else {
+      selectedCategory = null;
+
+      eventEmitter.emit("resetData");
+    }
   }
 
   arcs.style("cursor", "pointer").on("click", clicked);
@@ -271,7 +282,6 @@ export function createSunburstChart(container, initialData, eventEmitter) {
           return color(d.data.name);
         })
         .attr("fill-opacity", (slice) => {
-          console.log(slice.data.count);
           if (slice.data.count === 0) {
             return 0;
           }
