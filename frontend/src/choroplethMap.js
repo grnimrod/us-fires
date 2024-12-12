@@ -10,6 +10,7 @@ import {
 import * as topojson from "topojson-client";
 import { setUpContainer } from "./setUpContainer";
 import { legend, legendVertical } from "./colorLegend";
+import { rgb } from "d3";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
@@ -128,27 +129,44 @@ export async function createChoroplethMap(
   // });
 
   // Handle state selection
-  states
-    .on("click", function (event, d) {
-      const stateId = d.id;
-      const stateName = [...namemap.entries()].find(([name, id]) => id === stateId)?.[0];
-
-      if (selectedStatesSet.has(stateName)) {
-        selectedStatesSet.delete(stateName);
-        select(this).attr("stroke", "#fff").attr("stroke-width", 0.5);
+  states.on("click", function (event, d) {
+    const stateId = d.id;
+    const stateName = [...namemap.entries()].find(([name, id]) => id === stateId)?.[0];
+  
+    if (selectedStatesSet.has(stateName)) {
+      selectedStatesSet.delete(stateName);
+    } else {
+      selectedStatesSet.add(stateName);
+    }
+  
+    states.attr("fill", (d) => {
+      const stateName = [...namemap.entries()].find(([name, id]) => id === d.id)?.[0];
+      const isSelected = selectedStatesSet.has(stateName);
+  
+      const originalColor = color(valuemapForFirstEntry.get(d.id));
+      if (isSelected) {
+        return originalColor;
       } else {
-        selectedStatesSet.add(stateName);
-        select(this).attr("stroke", "black").attr("stroke-width", 2);
+        const col = rgb(originalColor);
+        const luminance = 0.2126 * col.r + 0.7152 * col.g + 0.0722 * col.b;
+        return `rgb(${luminance},${luminance},${luminance})`;
       }
-
-      eventEmitter.emit("stateSelected", Array.from(selectedStatesSet));
     });
+  
+    console.log("Updated Map Colors. Selected States Set:", Array.from(selectedStatesSet));
+    eventEmitter.emit("stateSelected", Array.from(selectedStatesSet));
+    eventEmitter.emit("categories", Array.from(selectedStatesSet));
+  });
+  
 
 
   listeningRect.on("click", function () {
     selectedStatesSet.clear();
+    states
+      .attr("fill", (d) => color(valuemapForFirstEntry.get(d.id))) // Reset to original colors
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 0.5);
     eventEmitter.emit("resetData");
-    states.attr("opacity", 1).attr("stroke", "none"); // Reset state styles
   });
 
   // Draw state borders
@@ -202,7 +220,7 @@ export async function createChoroplethMap(
   });
 
   return {
-    updateMap(newData) {
+    updateMap(newData, selectedStatesSet = new Set()) {
       const newStatesData = newData.stateCounts;
       // Create map along similar principle as above, only for a single object of the data array (corresponding to data of a single month)
       const valuemapForEntry = new Map(
@@ -216,6 +234,22 @@ export async function createChoroplethMap(
         .transition()
         .duration(100)
         .attr("fill", (d) => color(valuemapForEntry.get(d.id)));
+
+      
+      states.attr("fill", (d) => {
+        const stateName = [...namemap.entries()].find(([name, id]) => id === d.id)?.[0];
+        const isSelected = selectedStatesSet.has(stateName);
+
+        const originalColor = color(valuemapForEntry.get(d.id));
+        if (isSelected) {
+          return originalColor; // Keep the original color for selected states
+        } else {
+          // Convert to grayscale for unselected states
+          const col = rgb(originalColor);
+          const luminance = 0.2126 * col.r + 0.7152 * col.g + 0.0722 * col.b;
+          return `rgb(${luminance},${luminance},${luminance})`;
+        }
+      });
 
       // Update tooltips dynamically
       states.select("title").text((d) => {

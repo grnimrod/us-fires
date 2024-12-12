@@ -91,40 +91,40 @@ async function init() {
       });
     },
 
-    applyFilterByState(selectedState){
-      if (!selectedState) {
-        this.data.filteredData = null; // Clear filter
-        return;
-      }
+    // applyFilterByState(selectedState){
+    //   if (!selectedState) {
+    //     this.data.filteredData = null; // Clear filter
+    //     return;
+    //   }
 
-      // Filter data based on the selected state
-      this.data.filteredData = this.data.fullData.map((monthData) => {
-        // Filter children to include only fires in the selected state
-        const filteredChildren = monthData.monthlyStructure.children.filter(
-          (fire) => fire.STATE_NAME === selectedState 
-        );
+    //   // Filter data based on the selected state
+    //   this.data.filteredData = this.data.fullData.map((monthData) => {
+    //     // Filter children to include only fires in the selected state
+    //     const filteredChildren = monthData.monthlyStructure.children.filter(
+    //       (fire) => fire.STATE_NAME === selectedState 
+    //     );
 
-        // Update the state counts accordingly
-        const filteredStateCounts = monthData.stateCounts.map((state) => {
-          return {
-            state: state.state,
-            count: state.state === selectedState ? state.count : 0,
-          };
-        });
+    //     // Update the state counts accordingly
+    //     const filteredStateCounts = monthData.stateCounts.map((state) => {
+    //       return {
+    //         state: state.state,
+    //         count: state.state === selectedState ? state.count : 0,
+    //       };
+    //     });
 
-        // Return a new monthData object with updated values
-        return {
-          ...monthData,
-          monthlyStructure: {
-            ...monthData.monthlyStructure,
-            children: filteredChildren,
-          },
-          stateCounts: filteredStateCounts,
-          totalFireCount: filteredChildren.length,
-        };
-      })
+    //     // Return a new monthData object with updated values
+    //     return {
+    //       ...monthData,
+    //       monthlyStructure: {
+    //         ...monthData.monthlyStructure,
+    //         children: filteredChildren,
+    //       },
+    //       stateCounts: filteredStateCounts,
+    //       totalFireCount: filteredChildren.length,
+    //     };
+    //   })
 
-    },
+    // },
     getActiveFullData() {
       if (this.filterCategory) {
         return this.data.filteredData;
@@ -149,6 +149,7 @@ async function init() {
 
   const eventEmitter = new EventEmitter();
   let isSliding = false;
+
 
   const dropdownSelection = select("#dropdown-container");
 
@@ -226,13 +227,83 @@ async function init() {
     eventEmitter,
     z
   );
-
-  eventEmitter.on("stateSelected", (selectedState) => {
-    console.log("State selected", selectedState);
-    dashboardState.filterCategory = selectedState;
-    dashboardState.applyFilterByState(selectedState);
+ 
+  eventEmitter.on("stateSelected", (selectedStates) => {
+    console.log("StateSelected Event Received. Selected States:", selectedStates);
+  
+    if (selectedStates.length === 0) {
+      dashboardState.filterCategory = null;
+      dashboardState.data.filteredData = null;
+    } else {
+      dashboardState.filterCategory = selectedStates;
+      dashboardState.data.filteredData = dashboardState.data.fullData.map((monthData) => {
+        const filteredChildren = monthData.monthlyStructure.children.filter((fire) =>
+          selectedStates.includes(fire.STATE_NAME)
+        );
+  
+        const filteredStateCounts = monthData.stateCounts.map((state) => ({
+          state: state.state,
+          count: selectedStates.includes(state.state) ? state.count : 0,
+        }));
+  
+        // Create a new categories object for the selected states
+        const filteredCategories = createCategoriesFromFilteredChildren(filteredChildren);
+  
+        return {
+          ...monthData,
+          monthlyStructure: {
+            ...monthData.monthlyStructure,
+            children: filteredChildren,
+          },
+          stateCounts: filteredStateCounts,
+          totalFireCount: filteredChildren.length,
+          categories: filteredCategories, 
+        };
+      });
+    }
+  
     updateCharts();
+  
+    // Explicitly pass selected states to updateMap and sunburstChart
+    const activeMonthData = dashboardState.getActiveMonthData();
+    choroplethMap.updateMap(activeMonthData, new Set(selectedStates));
+    sunburstChart.updateSunburst(activeMonthData, selectedStates);
   });
+
+  // Helper function to create categories from filtered children 
+function createCategoriesFromFilteredChildren(filteredChildren) {
+  const buildHierarchy = (node, childrenData) => {
+    const grouped = childrenData.reduce((acc, child) => {
+      const category = child[node] || "Unknown";
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(child);
+      return acc;
+    }, {});
+
+    return Object.entries(grouped).map(([name, children]) => ({
+      name,
+      count: children.length,
+      children: children.some((child) => child.children)
+        ? buildHierarchy("children", children.flatMap((c) => c.children))
+        : [],
+    }));
+  };
+
+  const hierarchyRoot = {
+    name: "Fires",
+    children: buildHierarchy("CAUSE_CATEGORY", filteredChildren),
+  };
+
+  return hierarchyRoot;
+}
+  
+  
+  // eventEmitter.on("stateSelected", (selectedState) => {
+  //   console.log("State selected", selectedState);
+  //   dashboardState.filterCategory = selectedState;
+  //   dashboardState.applyFilterByState(selectedState);
+  //   updateCharts();
+  // });
 
   const isoplethMap = await createIsoplethMap(
     "#map3",
@@ -255,13 +326,17 @@ async function init() {
     updateCharts();
   });
 
+
+  
+
   function updateCharts() {
     const activeFullData = dashboardState.getActiveFullData();
     const activeMonthData = dashboardState.getActiveMonthData();
 
     histTimeline.updateHistFilteredData(activeFullData);
     binnedMap.updateBinnedMap(activeMonthData);
-    choroplethMap.updateMap(activeMonthData);
+    //choroplethMap.updateMap(activeMonthData);
+    choroplethMap.updateMap(activeMonthData, new Set(dashboardState.filterCategory || [])); // Pass selected states
     sunburstChart.updateSunburst(activeMonthData);
     // TODO: Download the contours file at https://drive.google.com/file/d/19pf5xAQeCj7YhtUh9SNzhPWUhu77sB71/view
     //  And uncomment the below line
