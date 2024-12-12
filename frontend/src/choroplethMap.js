@@ -9,7 +9,7 @@ import {
 } from "d3";
 import * as topojson from "topojson-client";
 import { setUpContainer } from "./setUpContainer";
-import { legend } from "./colorLegend";
+import { legend, legendVertical } from "./colorLegend";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
@@ -37,22 +37,35 @@ export async function createChoroplethMap(
     ])
     .interpolator(interpolateOranges);
 
-   // Create the legend and append it to the SVG
-   const colorLegend = legend(
-    scaleSequentialLog(
+  //  // Create the legend and append it to the SVG
+  //  const colorLegend = legend(
+  //   scaleSequentialLog(
+  //     [1, max(initialData, (monthEntry) => {
+  //       return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
+  //     })],
+  //     interpolateOranges
+  //   ),
+  //   svg,
+  //   {
+  //     title: "Fire Count by State (Logarithmic Scale)",
+  //     //className: "color-legend",
+  //     //translateX: containerWidth - 300, 
+  //     //translateY: containerHeight - 80, 
+  //   }
+  // );
+
+  const legendGroup = svg.append("g").attr("class", "legend-group");
+
+  let colorLegend = legendVertical({
+    color: scaleSequentialLog(
       [1, max(initialData, (monthEntry) => {
-        return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
-      })],
-      interpolateOranges
-    ),
-    svg,
-    {
-      title: "Fire Count by State (Logarithmic Scale)",
-      //className: "color-legend",
-      //translateX: containerWidth - 300, 
-      //translateY: containerHeight - 80, 
-    }
-  );
+          return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
+        })],
+        interpolateOranges
+      ),
+      svg: legendGroup,
+  });
+
 
   // Map state names to FIPS numeric identifiers
   // If you give namemap a state name, it returns the state id
@@ -86,7 +99,9 @@ export async function createChoroplethMap(
 
   const statesData = topojson.feature(topoJsonData, topoJsonData.objects.states);
 
-  const states = g
+  const mapGroup = svg.append("g").attr("class", "map-group");
+
+  const states = mapGroup
     .selectAll("path")
     .data(statesData.features)
     .join("path")
@@ -94,6 +109,9 @@ export async function createChoroplethMap(
     .attr("fill", (d) => color(valuemapForFirstEntry.get(d.id)))
     .attr("stroke", "#fff")
     .attr("stroke-width", 0.5);
+
+  // Track selected states
+  const selectedStatesSet = new Set();
   
   states
   .append("title")
@@ -104,19 +122,37 @@ export async function createChoroplethMap(
     return `${stateName || "Unknown"}\nNumber of Fires: ${fireCount}`;
   });
 
-    states.on("click", function(event, d) {
-      const selectedState = d.properties.name; 
-      eventEmitter.emit("stateSelected", selectedState);
+  // states.on("click", function(event, d) {
+  //   const selectedState = d.properties.name; 
+  //   eventEmitter.emit("stateSelected", selectedState);
+  // });
+
+  // Handle state selection
+  states
+    .on("click", function (event, d) {
+      const stateId = d.id;
+      const stateName = [...namemap.entries()].find(([name, id]) => id === stateId)?.[0];
+
+      if (selectedStatesSet.has(stateName)) {
+        selectedStatesSet.delete(stateName);
+        select(this).attr("stroke", "#fff").attr("stroke-width", 0.5);
+      } else {
+        selectedStatesSet.add(stateName);
+        select(this).attr("stroke", "black").attr("stroke-width", 2);
+      }
+
+      eventEmitter.emit("stateSelected", Array.from(selectedStatesSet));
     });
 
+
   listeningRect.on("click", function () {
-    //selectedStatesSet.clear();
+    selectedStatesSet.clear();
     eventEmitter.emit("resetData");
     states.attr("opacity", 1).attr("stroke", "none"); // Reset state styles
   });
 
   // Draw state borders
-  g.append("path")
+  mapGroup.append("path")
     .attr("fill", "none")
     .attr("stroke", "white")
     .attr("stroke-linejoin", "round")
@@ -139,11 +175,16 @@ export async function createChoroplethMap(
         [0, 0],
         [containerWidth, containerHeight],
       ])
+      .on("zoom", (event) => { 
+        mapGroup.attr("transform", event.transform);
+      })
   );
 
   select("#zoomResetBtnChoro").on("click", function () {
     svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
   });
+
+
 
   // Listen for slidingChange events
   let isSliding = false;
