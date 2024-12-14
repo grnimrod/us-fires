@@ -123,8 +123,8 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
       });
 
     // Dynamically calculate margins for legend positioning
-    const legendX = -radius + 60; 
-    const legendY = -radius - 60; 
+    const legendX = -radius + 50; 
+    const legendY = -radius - 50; 
 
     colorLegend = legend(scaleSequential(scale, interpolateOranges), svg, {
       title: "Fire Count",
@@ -191,8 +191,8 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
           .style("fill", color(chartData.values[0].totalFireCount));
       });
       
-      const legendX = -radius + 60;  
-      const legendY = -radius - 60; 
+      const legendX = -radius + 50;  
+      const legendY = -radius - 50; 
       
       //colorLegend.remove();
       d3.selectAll(".spiralLegend").remove();
