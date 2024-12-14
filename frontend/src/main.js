@@ -177,7 +177,8 @@ async function init() {
       // Apply the transform to all maps
       d3.select("#map1 g").attr("transform", currentTransform);
       d3.select("#map1 .hexbin").attr("transform", currentTransform);
-      d3.select("#map2 g").attr("transform", currentTransform);
+      // d3.select("#map2 g").attr("transform", currentTransform);
+      d3.select(".map-group").attr("transform", currentTransform);  // This is the choropleth map
       d3.select("#map3 g").attr("transform", currentTransform);
 
       const currentZoomMap = select(this).node().parentNode.id;
