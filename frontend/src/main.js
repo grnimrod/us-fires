@@ -1,4 +1,4 @@
-import { timeMonth, timeFormat, select, zoom } from "d3";
+import { timeMonth, timeFormat, select, zoom, filter } from "d3";
 import { sliderBottom } from "d3-simple-slider";
 import { createBinnedMap } from "./binnedMap.js";
 import { createChoroplethMap } from "./choroplethMap.js";
@@ -91,54 +91,62 @@ async function init() {
       });
     },
 
-    // applyFilterByState(selectedState){
-    //   if (!selectedState) {
-    //     this.data.filteredData = null; // Clear filter
-    //     return;
-    //   }
-
-    //   // Filter data based on the selected state
-    //   this.data.filteredData = this.data.fullData.map((monthData) => {
-    //     // Filter children to include only fires in the selected state
-    //     const filteredChildren = monthData.monthlyStructure.children.filter(
-    //       (fire) => fire.STATE_NAME === selectedState 
-    //     );
-
-    //     // Update the state counts accordingly
-    //     const filteredStateCounts = monthData.stateCounts.map((state) => {
-    //       return {
-    //         state: state.state,
-    //         count: state.state === selectedState ? state.count : 0,
-    //       };
-    //     });
-
-    //     // Return a new monthData object with updated values
-    //     return {
-    //       ...monthData,
-    //       monthlyStructure: {
-    //         ...monthData.monthlyStructure,
-    //         children: filteredChildren,
-    //       },
-    //       stateCounts: filteredStateCounts,
-    //       totalFireCount: filteredChildren.length,
-    //     };
-    //   })
-
-    // },
-    getActiveFullData() {
-      if (this.filterCategory) {
-        return this.data.filteredData;
-      }
-      return this.data.fullData;
-    },
-    getActiveMonthData() {
-      if (this.filterCategory) {
-        return this.data.filteredData[this.sliderIndex];
-      }
-      return this.data.fullData[this.sliderIndex];
-    },
-  };
-
+    filterByState(selectedStates) {
+        if (selectedStates.length === 0) {
+            dashboardState.filterCategory = null;
+            dashboardState.data.filteredData = null;
+          } else {
+              dashboardState.filterCategory = selectedStates;
+              dashboardState.data.filteredData = dashboardState.data.fullData.map((monthData) => {
+                  const filteredChildren = monthData.monthlyStructure.children.filter((fire) =>
+                      selectedStates.includes(fire.STATE_NAME)
+        
+                );
+    
+          // Recalculate state counts based on filtered children
+          const filteredStateCounts = monthData.stateCounts.map((state) => {
+              const filteredStateCount = filteredChildren.filter(
+                  (fire) => fire.STATE_NAME === state.state
+                ).length;
+        
+                return {
+                    state: state.state,
+                    count: filteredStateCount,
+                  };
+                });
+          
+                // Create a new categories object for the selected states
+                const filteredCategories = createCategoriesFromFilteredChildren(filteredChildren);
+                
+          
+                return {
+                    ...monthData,
+                    monthlyStructure: {
+                        ...monthData.monthlyStructure,
+                        children: filteredChildren,
+                      },
+                      stateCounts: filteredStateCounts,
+                      totalFireCount: filteredChildren.length,
+                      categories: filteredCategories, 
+                    };
+                  });
+                }
+              },
+              getActiveFullData() {
+                if (this.filterCategory) {
+                  return this.data.filteredData;
+                }
+                return this.data.fullData;
+              },
+              getActiveMonthData() {
+                if (this.filterCategory) {
+                  return this.data.filteredData[this.sliderIndex];
+                }
+                return this.data.fullData[this.sliderIndex];
+              },
+              
+            };
+  
   dashboardState.data.fullData = firesData;
   const activeData = dashboardState.getActiveFullData();
 
@@ -229,50 +237,25 @@ async function init() {
   );
  
   eventEmitter.on("stateSelected", (selectedStates) => {
-    console.log("StateSelected Event Received. Selected States:", selectedStates);
-  
-    if (selectedStates.length === 0) {
-      dashboardState.filterCategory = null;
-      dashboardState.data.filteredData = null;
-    } else {
-      dashboardState.filterCategory = selectedStates;
-      dashboardState.data.filteredData = dashboardState.data.fullData.map((monthData) => {
-        const filteredChildren = monthData.monthlyStructure.children.filter((fire) =>
-          selectedStates.includes(fire.STATE_NAME)
-        );
-  
-        const filteredStateCounts = monthData.stateCounts.map((state) => ({
-          state: state.state,
-          count: selectedStates.includes(state.state) ? state.count : 0,
-        }));
-  
-        // Create a new categories object for the selected states
-        const filteredCategories = createCategoriesFromFilteredChildren(filteredChildren);
-  
-        return {
-          ...monthData,
-          monthlyStructure: {
-            ...monthData.monthlyStructure,
-            children: filteredChildren,
-          },
-          stateCounts: filteredStateCounts,
-          totalFireCount: filteredChildren.length,
-          categories: filteredCategories, 
-        };
-      });
-    }
-  
+    dashboardState.filterCategory = selectedStates;
+    dashboardState.filterByState(selectedStates);
+
+
     updateCharts();
   
     // Explicitly pass selected states to updateMap and sunburstChart
+ 
     const activeMonthData = dashboardState.getActiveMonthData();
     choroplethMap.updateMap(activeMonthData, new Set(selectedStates));
-    sunburstChart.updateSunburst(activeMonthData, selectedStates);
+    
+    sunburstChart.updateSunburst(activeMonthData);
   });
 
-  // Helper function to create categories from filtered children 
+  //Helper function to create categories from filtered children 
 function createCategoriesFromFilteredChildren(filteredChildren) {
-  const buildHierarchy = (node, childrenData) => {
+
+  const buildHierarchy = (node, childrenData, grandChildren) => {
+
     const grouped = childrenData.reduce((acc, child) => {
       const category = child[node] || "Unknown";
       if (!acc[category]) acc[category] = [];
@@ -284,26 +267,29 @@ function createCategoriesFromFilteredChildren(filteredChildren) {
       name,
       count: children.length,
       children: children.some((child) => child.children)
-        ? buildHierarchy("children", children.flatMap((c) => c.children))
+        ? buildHierarchy(grandChildren, children.flatMap((c) => c.children))
         : [],
+
     }));
+
   };
+
+  // Only create hierarchy if there are filtered children
+  if (filteredChildren.length === 0) {
+    return {
+      name: "Fires",
+      children: []
+    };
+  }
 
   const hierarchyRoot = {
     name: "Fires",
-    children: buildHierarchy("CAUSE_CATEGORY", filteredChildren),
+    children: buildHierarchy("CAUSE_CATEGORY", filteredChildren, "STAT_CAUSE_DESCR"),
   };
 
   return hierarchyRoot;
 }
-  
-  
-  // eventEmitter.on("stateSelected", (selectedState) => {
-  //   console.log("State selected", selectedState);
-  //   dashboardState.filterCategory = selectedState;
-  //   dashboardState.applyFilterByState(selectedState);
-  //   updateCharts();
-  // });
+
 
   const isoplethMap = await createIsoplethMap(
     "#map3",
