@@ -14,6 +14,7 @@ import { rgb } from "d3";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
 
+
 export async function createChoroplethMap(
   container,
   initialData,
@@ -143,108 +144,56 @@ export async function createChoroplethMap(
     return `${stateName || "Unknown"}\nNumber of Fires: ${fireCount}`;
   });
 
-
+  let valuemapForEntry = new Map(); 
+  let stateColorMap = new Map();
 
   states
   .on("mouseover", function (event, d) {
-    const currentStateName = [...namemap.entries()].find(([name, id]) => id === d.id)?.[0];
-    const isSelected = selectedStatesSet.has(currentStateName);
-    const anyStateSelected = selectedStatesSet.size > 0;
+    const currentColor = d3.select(this).style("fill");
+    const darkerColor = d3.color(currentColor).darker(0.5);
 
-
-    if (anyStateSelected && !isSelected) {
-      // Show the state's original color temporarily
-      const originalColor = d3.select(this).style("fill"); // Use current color dynamically
-      d3.select(this).attr("fill", originalColor);
-    }
-   
+    d3.select(this)
+      .attr("fill", darkerColor)
   })
   .on("mouseout", function (event, d) {
-    const currentStateName = [...namemap.entries()].find(([name, id]) => id === d.id)?.[0];
-    const isSelected = selectedStatesSet.has(currentStateName);
-    const currentColor = d3.select(this).attr("fill");
-    const anyStateSelected = selectedStatesSet.size > 0;
+    const stateId = d.id;
+    const originalColor = stateColorMap.get(stateId); 
 
-    if (anyStateSelected && !isSelected) {
-     
-      // const currentColor = d3.select(this).style("fill"); // Use current color dynamically
-      const col = rgb(currentColor); // Convert to RGB
-      const luminance = 0.2126 * col.r + 0.7152 * col.g + 0.0722 * col.b;
-      d3.select(this).attr("fill", `rgb(${luminance},${luminance},${luminance})`);
-    }
-
-  
+    d3.select(this)
+      .attr("fill", originalColor)
   });
 
-  states
-  .on("mouseover", function (event, d) {
-    const currentStateName = [...namemap.entries()].find(([name, id]) => id === d.id)?.[0];
-    const isSelected = selectedStatesSet.has(currentStateName);
-    const anyStateSelected = selectedStatesSet.size > 0;
-
-    // Retrieve the current color dynamically
-    const currentColor = d3.select(this).style("fill");
-    const col = rgb(currentColor);
-
-    // Darken the color by reducing brightness
-    const darkerColor = `rgb(${Math.max(0, col.r - 30)}, ${Math.max(0, col.g - 30)}, ${Math.max(0, col.b - 30)})`;
-    d3.select(this).attr("fill", darkerColor);
-  })
-  .on("mouseout", function (event, d) {
-    const currentStateName = [...namemap.entries()].find(([name, id]) => id === d.id)?.[0];
-    const isSelected = selectedStatesSet.has(currentStateName);
-    const anyStateSelected = selectedStatesSet.size > 0;
-
-    
-    if (isSelected) {
-      
-      const originalColor = color(valuemapForFirstEntry.get(d.id)); // Assuming you have valuemapForFirstEntry
-      d3.select(this).attr("fill", originalColor);
-    } else if (anyStateSelected) {
-      // Apply greyscale for unselected states
-      const currentColor = color(valuemapForFirstEntry.get(d.id)); // Dynamically fetch
-      const col = rgb(currentColor);
-      const luminance = 0.2126 * col.r + 0.7152 * col.g + 0.0722 * col.b;
-      d3.select(this).attr("fill", `rgb(${luminance},${luminance},${luminance})`);
-    } else {
-      // Restore to original color
-      const originalColor = color(valuemapForFirstEntry.get(d.id));
-      d3.select(this).attr("fill", originalColor);
-    }
-  })
-
-  
-  // Handle state selection
   function clicked(event, d) {
     const stateId = d.id;
     const stateName = [...namemap.entries()].find(([name, id]) => id === stateId)?.[0];
+  
+    // Toggle selection state
     if (selectedStatesSet.has(stateName)) {
       selectedStatesSet.delete(stateName);
     } else {
       selectedStatesSet.add(stateName);
     }
-    // Update colors for all states
-    states.attr("fill", function (d) {
-      const currentStateName = [...namemap.entries()].find(([name, id]) => id === d.id)?.[0];
-      const isSelected = selectedStatesSet.has(currentStateName);
-
-      const currentColor = d3.select(this).style("fill"); // Use current color dynamically
-      const col = rgb(currentColor);
-
-      if (isSelected) {
-        return currentColor; // Keep selected state in color
-      } else if (selectedStatesSet.size > 0) {
-        // Grey out unselected states if at least one state is selected
-        const luminance = 0.2126 * col.r + 0.7152 * col.g + 0.0722 * col.b;
-        return `rgb(${luminance},${luminance},${luminance})`;
-      } else {
-        return currentColor; // Restore original color when no states are selected
-      }
-    });
-
+  
+    // Update visual attributes for all states
+    states
+      .attr("fill", (d) => {
+        const stateId = d.id;  
+        return stateColorMap.get(stateId) || color(0); // Default to base color if undefined
+      })
+      .attr("opacity", (d) => {
+        const stateId = d.id;
+        const isSelected = selectedStatesSet.has(
+          [...namemap.entries()].find(([name, id]) => id === stateId)?.[0]
+        );
+        return isSelected || selectedStatesSet.size === 0 ? 1 : 0.7;
+      });
+  
+    // Emit selection event
     eventEmitter.emit("stateSelected", Array.from(selectedStatesSet));
   }
-
+  
+  
+  
 
   states
     .style("cursor", "pointer").on("click", clicked);
@@ -252,9 +201,8 @@ export async function createChoroplethMap(
   listeningRect.on("click", function () {
     selectedStatesSet.clear();
     states
-      .attr("fill", (d) => color(valuemapForFirstEntry.get(d.id))) // Reset to original colors
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 0.5);
+      .attr("fill", (d) => stateColorMap.get(d.id))
+      .attr("opacity", 1);  
     eventEmitter.emit("resetData");
   });
 
@@ -275,6 +223,7 @@ export async function createChoroplethMap(
         )
       )
     );
+
 
   select(container).append(() => svg.node());
 
@@ -305,24 +254,33 @@ export async function createChoroplethMap(
     }
   });
 
+
   return {
-    updateMap(newData, selectedStatesSet = new Set()) {
+    updateMap(newData) {
       const newStatesData = newData.stateCounts;
       // Create map along similar principle as above, only for a single object of the data array (corresponding to data of a single month)
-      const valuemapForEntry = new Map(
+      valuemapForEntry = new Map(
         newStatesData.map((stateEntry) => [
           namemap.get(stateEntry.state),
           stateEntry.count,
         ])
       );
+      console.log("Updated valuemapForEntry:", valuemapForEntry);
+     // Update colors for all states based on new data
+    states.transition()
+    .duration(100)
+    .attr("fill", (d) => {
+      const colorValue = valuemapForEntry.get(d.id) || 0; 
+      return color(colorValue); 
+    });
 
-      if(selectedStatesSet.size === 0) {
-        states.attr("fill", (d) => color(valuemapForEntry.get(d.id)));
-      }
-
-      states
-        .transition()
-        .duration(100)
+  // Update the stateColorMap to reflect new data
+  states.each(function (d) {
+    const stateId = d.id;
+    const newColor = color(valuemapForEntry.get(stateId) || 0);
+    stateColorMap.set(stateId, newColor); 
+  });
+       
 
       // Update tooltips dynamically
       states.select("title").text((d) => {
@@ -350,5 +308,9 @@ export async function createChoroplethMap(
         }
       }
     },
+
+    
+
+
   };
 }
