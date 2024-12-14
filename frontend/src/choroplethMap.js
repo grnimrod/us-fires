@@ -57,16 +57,42 @@ export async function createChoroplethMap(
 
   const legendGroup = svg.append("g").attr("class", "legend-group");
 
+  legendGroup
+  .append("text")
+  .attr("class", "legend-title")
+  .attr("x", -10) // Adjust x position to align with the legend
+  .attr("y", -20) // Position the title above the legend
+  .attr("text-anchor", "start") // Align the text with the legend
+  .attr("font-size", "10px") // Font size for the title
+  .attr("font-weight", "bold")
+  .call((text) => {
+    text.append("tspan") // First line
+      .text("Fire Count by State")
+      .attr("x", 0)
+      .attr("dy", 15); // No vertical shift for the first line
+
+    text.append("tspan") // Second line
+      .text("(Log Scale)")
+      .attr("x", 0) // Align with the first line
+      .attr("dy", 15); // Vertical shift for the second line
+  });
+
+  
   let colorLegend = legendVertical({
     color: scaleSequentialLog(
       [1, max(initialData, (monthEntry) => {
-          return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
-        })],
-        interpolateOranges
-      ),
-      svg: legendGroup,
+        return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
+      })],
+      interpolateOranges
+    ),
+    svg: legendGroup,
+    translateY: 5,
   });
 
+  legendGroup.attr(
+    "transform",
+    `translate(0, ${containerHeight / 2 - 200})`
+  );
 
   // Map state names to FIPS numeric identifiers
   // If you give namemap a state name, it returns the state id

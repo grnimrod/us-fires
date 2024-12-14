@@ -102,27 +102,39 @@ export async function createBinnedMap(container, initialData, eventEmitter, zoom
     }
   });
 
-  // let colorLegend = legend(
-  //   scaleSequentialLog(
-  //     [1, max(initialData, (d) => d.totalFireCount)],
-  //     interpolateOranges
-  //   ),
-  //   svg,
-  //   {
-  //     title: "binned fire count",
-  //     //className: "spiralLegend",
-  //     //translateX: -220,
-  //     //translateY: -230
-  //   }
-  // );
+  const legendGroup = svg.append("g").attr("class", "legend-group");
 
+  legendGroup
+  .append("text")
+  .attr("class", "legend-title")
+  .attr("x", -10) // Adjust x position to align with the legend
+  .attr("y", -20) // Position the title above the legend
+  .attr("text-anchor", "start") // Align the text with the legend
+  .attr("font-size", "10px") // Font size for the title
+  .attr("font-weight", "bold")
+  .call((text) => {
+    text.append("tspan") // First line
+      .text("Fire Count by State")
+      .attr("x", 0)
+      .attr("dy", 15); // No vertical shift for the first line
+
+    text.append("tspan") // Second line
+      .text("(Log Scale)")
+      .attr("x", 0) // Align with the first line
+      .attr("dy", 15); // Vertical shift for the second line
+  });
   let colorLegend = legendVertical({
     color: scaleSequentialLog(
         [1, max(initialData, (d) => d.totalFireCount)],
         interpolateOranges
       ),
-    svg: svg
+    svg: legendGroup
   })
+
+  legendGroup.attr(
+    "transform",
+    `translate(0, ${containerHeight / 2 - 200})`
+  );
 
   return {
     updateBinnedMap(newData) {
