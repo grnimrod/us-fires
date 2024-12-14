@@ -263,9 +263,6 @@ export async function createChoroplethMap(
         [0, 0],
         [containerWidth, containerHeight],
       ])
-      .on("zoom", (event) => { 
-        mapGroup.attr("transform", event.transform);
-      })
   );
 
   select("#zoomResetBtnChoro").on("click", function () {
