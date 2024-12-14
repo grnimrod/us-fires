@@ -37,44 +37,38 @@ export async function createChoroplethMap(
       }),
     ])
     .interpolator(interpolateOranges);
-
-  //  // Create the legend and append it to the SVG
-  //  const colorLegend = legend(
-  //   scaleSequentialLog(
-  //     [1, max(initialData, (monthEntry) => {
-  //       return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
-  //     })],
-  //     interpolateOranges
-  //   ),
-  //   svg,
-  //   {
-  //     title: "Fire Count by State (Logarithmic Scale)",
-  //     //className: "color-legend",
-  //     //translateX: containerWidth - 300, 
-  //     //translateY: containerHeight - 80, 
-  //   }
-  // );
-
+  
+    // legendVertical({
+      //   color: scaleSequentialLog(
+        //     [1, max(initialData, (monthEntry) => {
+          //         return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
+          //       })],
+          //       interpolateOranges
+          //     ),
+          //     svg: legendGroup,
+          //     title: "Fire Count (Logarithm)",
+          //     tickSize: 0,
+          // });
   const legendGroup = svg.append("g").attr("class", "legend-group");
 
   legendGroup
   .append("text")
   .attr("class", "legend-title")
-  .attr("x", -10) // Adjust x position to align with the legend
-  .attr("y", -20) // Position the title above the legend
-  .attr("text-anchor", "start") // Align the text with the legend
-  .attr("font-size", "10px") // Font size for the title
+  .attr("x", -10) 
+  .attr("y", -20)
+  .attr("text-anchor", "start") 
+  .attr("font-size", "10px")
   .attr("font-weight", "bold")
   .call((text) => {
-    text.append("tspan") // First line
-      .text("Fire Count by State")
+    text.append("tspan") 
+      .text("Fire Count")
       .attr("x", 0)
-      .attr("dy", 15); // No vertical shift for the first line
+      .attr("dy", 15); 
 
-    text.append("tspan") // Second line
-      .text("(Log Scale)")
-      .attr("x", 0) // Align with the first line
-      .attr("dy", 15); // Vertical shift for the second line
+    text.append("tspan") 
+      .text("(Logarithmic)")
+      .attr("x", 0) 
+      .attr("dy", 15); 
   });
 
   
@@ -120,7 +114,7 @@ export async function createChoroplethMap(
     .attr("width", containerWidth)
     .attr("height", containerHeight)
     .attr("fill", "none")
-    .attr("pointer-events", "all");  // Make the entire SVG clickable
+    .attr("pointer-events", "all");  
 
   const g = svg.append("g");
 
@@ -157,7 +151,7 @@ export async function createChoroplethMap(
     const isSelected = selectedStatesSet.has(currentStateName);
     const anyStateSelected = selectedStatesSet.size > 0;
 
-    // Case 2: Hovering over a state while at least one is already selected
+
     if (anyStateSelected && !isSelected) {
       // Show the state's original color temporarily
       const originalColor = d3.select(this).style("fill"); // Use current color dynamically
@@ -172,7 +166,7 @@ export async function createChoroplethMap(
     const anyStateSelected = selectedStatesSet.size > 0;
 
     if (anyStateSelected && !isSelected) {
-      // Reapply the greyscale based on the current color
+     
       // const currentColor = d3.select(this).style("fill"); // Use current color dynamically
       const col = rgb(currentColor); // Convert to RGB
       const luminance = 0.2126 * col.r + 0.7152 * col.g + 0.0722 * col.b;
@@ -201,9 +195,9 @@ export async function createChoroplethMap(
     const isSelected = selectedStatesSet.has(currentStateName);
     const anyStateSelected = selectedStatesSet.size > 0;
 
-    // Restore the color based on selection
+    
     if (isSelected) {
-      // Keep selected state in its original color
+      
       const originalColor = color(valuemapForFirstEntry.get(d.id)); // Assuming you have valuemapForFirstEntry
       d3.select(this).attr("fill", originalColor);
     } else if (anyStateSelected) {
@@ -309,19 +303,6 @@ export async function createChoroplethMap(
         .style("opacity", 0)
         .remove(); // Remove the background title when not sliding
     }
-  });
-
-  const legendGroup = svg.append("g").attr("class", "legend-group");
-  legendVertical({
-    color: scaleSequentialLog(
-      [1, max(initialData, (monthEntry) => {
-          return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
-        })],
-        interpolateOranges
-      ),
-      svg: legendGroup,
-      title: "Fire Count (Logarithm)",
-      tickSize: 0,
   });
 
   return {

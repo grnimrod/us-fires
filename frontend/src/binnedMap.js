@@ -114,12 +114,12 @@ export async function createBinnedMap(container, initialData, eventEmitter, zoom
   .attr("font-weight", "bold")
   .call((text) => {
     text.append("tspan") // First line
-      .text("Fire Count by State")
+      .text("Fire Count")
       .attr("x", 0)
       .attr("dy", 15); // No vertical shift for the first line
 
     text.append("tspan") // Second line
-      .text("(Log Scale)")
+      .text("(Logarithmic)")
       .attr("x", 0) // Align with the first line
       .attr("dy", 15); // Vertical shift for the second line
   });

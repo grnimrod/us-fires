@@ -13,7 +13,6 @@ import {
 } from "d3";
 import { contours } from "d3-contour";
 import { legend, legendVertical } from "./colorLegend";
-import { legend, legendVertical } from "./colorLegend";
 import { setUpContainer } from "./setUpContainer";
 import * as topojson from "topojson-client";
 
@@ -176,16 +175,16 @@ export async function createIsoplethMap(container, initialData, eventEmitter, zo
   legendGroup
   .append("text")
   .attr("class", "legend-title")
-  .attr("x", -10) // Adjust x position to align with the legend
-  .attr("y", -20) // Position the title above the legend
-  .attr("text-anchor", "start") // Align the text with the legend
-  .attr("font-size", "10px") // Font size for the title
+  .attr("x", -10)
+  .attr("y", -20) 
+  .attr("text-anchor", "start") 
+  .attr("font-size", "10px")
   .attr("font-weight", "bold")
   .call((text) => {
     text.append("tspan") // First line
       .text("Fire Influence Index")
       .attr("x", 0)
-      .attr("dy", 15); // No vertical shift for the first line
+      .attr("dy", 20); 
   });
   
   // Append the vertical legend
@@ -197,19 +196,6 @@ export async function createIsoplethMap(container, initialData, eventEmitter, zo
     svg: legendGroup,
   });
 
-
-  // legendVertical(
-    //   scaleThreshold(
-      //     thresholds,
-      //     thresholds.map((v) => colorScale(v))
-      //   ),
-      //   svg,
-      //   {
-        //     title: "Fire Influence Index",
-        //     tickSize: 0,
-        //   }
-        // );
-        
     legendGroup.attr(
       "transform",
       `translate(0, ${containerHeight / 2 - 200})`
