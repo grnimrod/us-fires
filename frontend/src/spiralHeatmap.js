@@ -122,11 +122,15 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
         return color(d.totalFireCount);
       });
 
+    // Dynamically calculate margins for legend positioning
+    const legendX = -radius + 60; 
+    const legendY = -radius - 60; 
+
     colorLegend = legend(scaleSequential(scale, interpolateOranges), svg, {
       title: "Fire Count",
       className: "spiralLegend",
-      translateX: -160,
-      translateY: -280,
+      translateX: legendX,
+      translateY: legendY,
     });
 
     let element = d3.select("#fig3").select("svg");
@@ -186,7 +190,10 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
           .duration(100)
           .style("fill", color(chartData.values[0].totalFireCount));
       });
-
+      
+      const legendX = -radius + 60;  
+      const legendY = -radius - 60; 
+      
       //colorLegend.remove();
       d3.selectAll(".spiralLegend").remove();
       d3.selectAll("image")
@@ -194,12 +201,13 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
         console.log(d3.select(this).attr("transform"));
         return d3.select(this).attr("transform") == "translate(-160,-280)";
       }).remove();
+      
 
       colorLegend = legend(scaleSequential(scale, interpolateOranges), svg, {
         title: "Fire Count",
         className: "spiralLegend",
-        translateX: -160,
-        translateY: -280,
+        translateX: legendX,
+        translateY: legendY,
       });
     },
   };
