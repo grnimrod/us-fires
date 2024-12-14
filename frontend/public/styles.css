@@ -14,7 +14,8 @@
   grid-column-start: 3;
   grid-row-start: 1;
   text-align: center;
-  color: #631e03;
+  color:black;
+  margin-top: 1%;
   
 }
 
@@ -93,16 +94,14 @@
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
 }
 
-#Playbutton{
-  padding-left: 48%;
-  padding-bottom: 2%;
-
+#play-button {
+  margin-left: 0.5%;
 }
 
 h2 {
   text-align: center;
   margin: 0%;
-  color: #631e03;
+  color: black;
   border: #000;
   font-size: x-large;
 }
@@ -110,15 +109,32 @@ h2 {
 h3 {
   text-align: center;
   margin: 0%;
-  color: #631e03;
+  color: black;
   border: #000;
-  font-size: larger;
+  font-size: 22px;
+  
 }
 
 h4 {
   text-align: center;
   margin: 0%;
-  color: #631e03;
+  color: black;
   border: #000;
-  font-size: medium;
+  font-size: 18px
+}
+
+.chart-title {
+  font-size: 20px;
+  font-weight: bold;
+  fill: #000;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+
+#histogram-timeline {
+  margin-top: 1%;
+}
+
+#Playbutton {
+  margin-top: 1%;
 }

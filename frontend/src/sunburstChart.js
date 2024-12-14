@@ -141,10 +141,14 @@ export function createSunburstChart(container, initialData, eventEmitter) {
   // Chart title current month
   const chartTitle = svg
     .append("text")
-    .attr("x", containerWidth / 2 - 3 * radius)
-    .attr("y", margin.top / 2)
+    // .attr("x", containerWidth / 2 - 3 * radius)
+    .attr("y", margin.top / 2.5)
     .attr("font-size", "20px")
-    .text(`${timeFormat("%Y-%m")(initialData[0].month)}`);
+    .text(`Fire Categories: ${timeFormat("%Y-%m")(initialData[0].month)}`)
+    .attr("x", containerWidth / 2) 
+    .attr("class", "chart-title")
+    .attr("text-anchor", "middle");
+    
 
   // Add fire count title to middle of the chart
   const midTitle = svg
@@ -261,7 +265,12 @@ export function createSunburstChart(container, initialData, eventEmitter) {
         };
       });
 
-      chartTitle.text(`${timeFormat("%Y-%m")(newData.month)}`);
+      chartTitle
+        .text(`Fire Categories: ${timeFormat("%Y-%m")(newData.month)}`)
+        .attr("class", "chart-title")
+        .attr("x", containerWidth / 2) 
+        .attr("y", margin.top / 2.5)
+        .attr("text-anchor", "middle");
       midTitle.text(newRoot.value);
 
       const newArcs = svg
