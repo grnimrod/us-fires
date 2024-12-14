@@ -125,8 +125,8 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
     colorLegend = legend(scaleSequential(scale, interpolateOranges), svg, {
       title: "Fire Count",
       className: "spiralLegend",
-      translateX: -170,
-      translateY: 280,
+      translateX: -160,
+      translateY: -280,
     });
 
     let element = d3.select("#fig3").select("svg");
@@ -192,14 +192,14 @@ export function createSpiralHeatmap(container, monthlyData, slider) {
       d3.selectAll("image")
       .filter(function() {
         console.log(d3.select(this).attr("transform"));
-        return d3.select(this).attr("transform") == "translate(-160,-258)";
+        return d3.select(this).attr("transform") == "translate(-160,-280)";
       }).remove();
 
       colorLegend = legend(scaleSequential(scale, interpolateOranges), svg, {
-        title: "fire count",
+        title: "Fire Count",
         className: "spiralLegend",
         translateX: -160,
-        translateY: -230,
+        translateY: -280,
       });
     },
   };
