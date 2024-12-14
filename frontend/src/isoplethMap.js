@@ -12,13 +12,13 @@ import {
   geoTransform,
 } from "d3";
 import { contours } from "d3-contour";
-import { legend } from "./colorLegend";
+import { legend, legendVertical } from "./colorLegend";
 import { setUpContainer } from "./setUpContainer";
 import * as topojson from "topojson-client";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
-const isoplethMapStandardWidth = 643.6;
-const isoplethMapStandardHeight = 267.2;
+const isoplethMapStandardWidth = 980.4;
+const isoplethMapStandardHeight = 355.5;
 
 // Define the grid resolution (number of cells in x and y directions)
 let fireDataPoints;
@@ -170,17 +170,28 @@ export async function createIsoplethMap(container, initialData, eventEmitter, zo
     drawIsolines(contours, g, containerWidth, containerHeight);
   });
 
-  legend(
-    scaleThreshold(
+  // legend(
+  //   scaleThreshold(
+  //     thresholds,
+  //     thresholds.map((v) => colorScale(v))
+  //   ),
+  //   svg,
+  //   {
+  //     title: "Fire Influence Index",
+  //     tickSize: 0,
+  //   }
+  // );
+
+  const legendGroup = svg.append("g").attr("class", "legend-group");
+  legendVertical({
+    color: scaleThreshold(
       thresholds,
       thresholds.map((v) => colorScale(v))
     ),
-    svg,
-    {
-      title: "Fire Influence Index",
-      tickSize: 0,
-    }
-  );
+    svg: legendGroup,
+    title: "Fire Influence Index",
+    tickSize: 0,
+  })
 
   select(container).append(() => svg.node());
 

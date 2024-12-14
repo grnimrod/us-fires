@@ -55,19 +55,6 @@ export async function createChoroplethMap(
   //   }
   // );
 
-  const legendGroup = svg.append("g").attr("class", "legend-group");
-
-  let colorLegend = legendVertical({
-    color: scaleSequentialLog(
-      [1, max(initialData, (monthEntry) => {
-          return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
-        })],
-        interpolateOranges
-      ),
-      svg: legendGroup,
-  });
-
-
   // Map state names to FIPS numeric identifiers
   // If you give namemap a state name, it returns the state id
   // We have state names in our data, we have state ids in the topojson data
@@ -283,6 +270,19 @@ export async function createChoroplethMap(
         .style("opacity", 0)
         .remove(); // Remove the background title when not sliding
     }
+  });
+
+  const legendGroup = svg.append("g").attr("class", "legend-group");
+  legendVertical({
+    color: scaleSequentialLog(
+      [1, max(initialData, (monthEntry) => {
+          return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
+        })],
+        interpolateOranges
+      ),
+      svg: legendGroup,
+      title: "Fire Count (Logarithm)",
+      tickSize: 0,
   });
 
   return {

@@ -138,3 +138,7 @@ h4 {
 #Playbutton {
   margin-top: 1%;
 }
+
+.legend-group {
+  transform: translate(0, 25px);
+}

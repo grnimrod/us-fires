@@ -115,13 +115,15 @@ export async function createBinnedMap(container, initialData, eventEmitter, zoom
   //     //translateY: -230
   //   }
   // );
-
-  let colorLegend = legendVertical({
+  const legendGroup = svg.append("g").attr("class", "legend-group");
+  legendVertical({
     color: scaleSequentialLog(
         [1, max(initialData, (d) => d.totalFireCount)],
         interpolateOranges
       ),
-    svg: svg
+    svg: legendGroup,
+    title: "Fire Count (Logarithm)",
+    tickSize: 0,
   })
 
   return {
