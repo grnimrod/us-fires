@@ -93,6 +93,7 @@ export async function createIsoplethMap(container, initialData, eventEmitter, zo
                 month: "short",
                 day: "numeric",
             }),
+            fireEntry.STAT_CAUSE_DESCR,
         ];
   });
 
@@ -223,6 +224,7 @@ export async function createIsoplethMap(container, initialData, eventEmitter, zo
             month: "short",
             day: "numeric",
           }),
+          fireEntry.STAT_CAUSE_DESCR,
         ];
       });
 
@@ -330,7 +332,7 @@ function drawIsolines(polygons, g, width, height) {
       g.selectAll(".highlighted-point").remove();
       // Plot the influencing points
       influencingFires.forEach(
-        ([x, y, fireSize, fireName, state, county, startDate, contDate]) => {
+        ([x, y, fireSize, fireName, state, county, startDate, contDate, cause]) => {
           g.append("circle")
             .attr("class", "highlighted-point")
             .attr("cx", x)
@@ -382,7 +384,8 @@ function drawIsolines(polygons, g, width, height) {
                                 <strong>State:</strong> ${state}<br>
                                 <strong>County:</strong> ${county}<br>
                                 <strong>Start Date:</strong> ${startDate}<br>
-                                <strong>Contain Date:</strong> ${contDate}
+                                <strong>Contain Date:</strong> ${contDate}<br>
+                                <strong>Cause: </strong> ${cause}<br>
                             `);
             });
         }
