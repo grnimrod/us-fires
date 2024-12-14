@@ -13,12 +13,13 @@ import {
 } from "d3";
 import { contours } from "d3-contour";
 import { legend, legendVertical } from "./colorLegend";
+import { legend, legendVertical } from "./colorLegend";
 import { setUpContainer } from "./setUpContainer";
 import * as topojson from "topojson-client";
 
 const usAtlasUrl = "https://unpkg.com/us-atlas@3.0.1/counties-10m.json";
-const isoplethMapStandardWidth = 643.6;
-const isoplethMapStandardHeight = 267.2;
+const isoplethMapStandardWidth = 980.4;
+const isoplethMapStandardHeight = 355.5;
 
 // Define the grid resolution (number of cells in x and y directions)
 let fireDataPoints;
@@ -93,6 +94,7 @@ export async function createIsoplethMap(container, initialData, eventEmitter, zo
                 month: "short",
                 day: "numeric",
             }),
+            fireEntry.STAT_CAUSE_DESCR,
         ];
   });
 
@@ -255,6 +257,7 @@ export async function createIsoplethMap(container, initialData, eventEmitter, zo
             month: "short",
             day: "numeric",
           }),
+          fireEntry.STAT_CAUSE_DESCR,
         ];
       });
 
@@ -362,7 +365,7 @@ function drawIsolines(polygons, g, width, height) {
       g.selectAll(".highlighted-point").remove();
       // Plot the influencing points
       influencingFires.forEach(
-        ([x, y, fireSize, fireName, state, county, startDate, contDate]) => {
+        ([x, y, fireSize, fireName, state, county, startDate, contDate, cause]) => {
           g.append("circle")
             .attr("class", "highlighted-point")
             .attr("cx", x)
@@ -414,7 +417,8 @@ function drawIsolines(polygons, g, width, height) {
                                 <strong>State:</strong> ${state}<br>
                                 <strong>County:</strong> ${county}<br>
                                 <strong>Start Date:</strong> ${startDate}<br>
-                                <strong>Contain Date:</strong> ${contDate}
+                                <strong>Contain Date:</strong> ${contDate}<br>
+                                <strong>Cause: </strong> ${cause}<br>
                             `);
             });
         }

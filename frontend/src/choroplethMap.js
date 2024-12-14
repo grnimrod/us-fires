@@ -311,6 +311,19 @@ export async function createChoroplethMap(
     }
   });
 
+  const legendGroup = svg.append("g").attr("class", "legend-group");
+  legendVertical({
+    color: scaleSequentialLog(
+      [1, max(initialData, (monthEntry) => {
+          return max(monthEntry.stateCounts, (stateEntry) => stateEntry.count);
+        })],
+        interpolateOranges
+      ),
+      svg: legendGroup,
+      title: "Fire Count (Logarithm)",
+      tickSize: 0,
+  });
+
   return {
     updateMap(newData, selectedStatesSet = new Set()) {
       const newStatesData = newData.stateCounts;
