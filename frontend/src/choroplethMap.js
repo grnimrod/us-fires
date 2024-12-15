@@ -160,8 +160,9 @@ export async function createChoroplethMap(
     const isSelected = selectedStatesSet.has([...namemap.entries()].find(([name, id]) => id === stateId)?.[0]);
 
     if (!isSelected && selectedStatesSet.size > 0) {
-        // Unselected states remain greyscale
-        return;
+      const originalColor = stateColorMap.get(stateId) || color(0);
+      d3.select(this)
+          .attr("fill", originalColor)
     }
 
     const currentColor = d3.select(this).style("fill");
