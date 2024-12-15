@@ -91,29 +91,41 @@ async function init() {
       });
     },
 
-    filterByState(selectedStates) {
-        if (selectedStates.length === 0) {
+    filterByState(states) {
+      const {selected, unselected} = states;
+
+        if (selected.length === 0) {
             dashboardState.filterCategory = null;
             dashboardState.data.filteredData = null;
           } else {
-              dashboardState.filterCategory = selectedStates;
+              dashboardState.filterCategory = selected;
+
               dashboardState.data.filteredData = dashboardState.data.fullData.map((monthData) => {
                   const filteredChildren = monthData.monthlyStructure.children.filter((fire) =>
-                      selectedStates.includes(fire.STATE_NAME)
+                      selected.includes(fire.STATE_NAME)
         
                 );
+                const unfilteredChildren = monthData.monthlyStructure.children.filter(
+                  (fire) => unselected.includes(fire.STATE_NAME)
+              );
     
-          // Recalculate state counts based on filtered children
-          const filteredStateCounts = monthData.stateCounts.map((state) => {
-              const filteredStateCount = filteredChildren.filter(
-                  (fire) => fire.STATE_NAME === state.state
-                ).length;
-        
-                return {
-                    state: state.state,
-                    count: filteredStateCount,
-                  };
-                });
+         // Preserve counts for both selected and unselected states
+         const filteredStateCounts = monthData.stateCounts.map((state) => {
+          const selectedCount = filteredChildren.filter(
+              (fire) => fire.STATE_NAME === state.state
+          ).length;
+
+          const unselectedCount = unfilteredChildren.filter(
+              (fire) => fire.STATE_NAME === state.state
+          ).length;
+
+            return {
+              state: state.state,
+              count: selected.includes(state.state)
+                  ? selectedCount // Preserve count for selected states
+                  : unselectedCount, // Keep unselected state data
+          };
+        });
           
                 // Create a new categories object for the selected states
                 const filteredCategories = createCategoriesFromFilteredChildren(filteredChildren);
@@ -125,7 +137,7 @@ async function init() {
                         ...monthData.monthlyStructure,
                         children: filteredChildren,
                       },
-                      stateCounts: filteredStateCounts,
+                      stateCounts:filteredStateCounts,
                       totalFireCount: filteredChildren.length,
                       categories: filteredCategories, 
                     };
@@ -237,9 +249,9 @@ async function init() {
     z
   );
  
-  eventEmitter.on("stateSelected", (selectedStates) => {
-    dashboardState.filterCategory = selectedStates;
-    dashboardState.filterByState(selectedStates);
+  eventEmitter.on("stateSelected", (states) => {
+    // dashboardState.filterCategory = selectedStates;
+    dashboardState.filterByState(states);
 
 
     updateCharts();
@@ -247,7 +259,7 @@ async function init() {
     // Explicitly pass selected states to updateMap and sunburstChart
  
     const activeMonthData = dashboardState.getActiveMonthData();
-    choroplethMap.updateMap(activeMonthData, new Set(selectedStates));
+    choroplethMap.updateMap(activeMonthData, states);
     
     sunburstChart.updateSunburst(activeMonthData);
   });
